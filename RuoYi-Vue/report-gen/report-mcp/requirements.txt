@@ -1,9 +1,7 @@
 fastapi
 uvicorn[standard]
-requests
-python-dotenv
 feedparser
 pydantic
+python-dotenv
 httpx
 redis
-black
