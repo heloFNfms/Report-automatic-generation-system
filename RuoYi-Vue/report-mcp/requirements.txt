@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+requests
+python-dotenv
+feedparser
+pydantic
+httpx
+redis
+black

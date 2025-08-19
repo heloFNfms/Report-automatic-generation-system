@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic
+python-dotenv
+scikit-learn
+rank_bm25
+nltk
+transformers
+sentence-transformers
+redis
