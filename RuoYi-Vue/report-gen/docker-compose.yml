@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: report-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: analyze_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: WZY216814wzy
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - report-net
+    restart: unless-stopped
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: report-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - report-net
+    restart: unless-stopped
+
+  # MCP 服务器
+  report-mcp:
+    build:
+      context: ./report-mcp
+      dockerfile: Dockerfile
+    container_name: report-mcp
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_TTL=3600
+    depends_on:
+      - redis
+    networks:
+      - report-net
+    restart: unless-stopped
+    volumes:
+      - ./report-mcp/.env:/app/.env
+
+  # Orchestrator 编排器
+  report-orchestrator:
+    build:
+      context: ./report-orchestrator
+      dockerfile: Dockerfile
+    container_name: report-orchestrator
+    ports:
+      - "9000:9000"
+    environment:
+      - MCP_BASE=http://report-mcp:8000
+      - DEEPSEEK_API_KEY=sk-fb80d84c81ab42b782b69ed7997a094b
+      - DEEPSEEK_BASE=https://api.deepseek.com
+      - DEEPSEEK_MODEL=deepseek-chat
+      - MYSQL_DSN=mysql+asyncmy://user:WZY216814wzy@mysql:3306/analyze_db?charset=utf8mb4
+      - VECTOR_BACKEND=faiss
+      - FAISS_INDEX_PATH=/app/data/faiss.index
+      - FAISS_META_PATH=/app/data/faiss_meta.json
+    depends_on:
+      - mysql
+      - report-mcp
+    networks:
+      - report-net
+    restart: unless-stopped
+    volumes:
+      - orchestrator_data:/app/data
+      - ./report-orchestrator/.env:/app/.env
+
+  # 可选：PGVector 向量数据库
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: report-pgvector
+    environment:
+      POSTGRES_DB: reportgen
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - report-net
+    restart: unless-stopped
+    profiles:
+      - pgvector  # 使用 --profile pgvector 启动
+
+volumes:
+  mysql_data:
+  redis_data:
+  orchestrator_data:
+  pgvector_data:
+
+networks:
+  report-net:
+    driver: bridge

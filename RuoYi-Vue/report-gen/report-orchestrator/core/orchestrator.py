@@ -2,14 +2,18 @@ import os
 from typing import Dict, Any
 from .mcp_client import MCPClient
 from .deepseek_client import DeepSeekClient
-from .textops import flatten_snippets, chunk_texts
+from .textops import flatten_snippets, chunk_texts, rerank_texts, budget_context, smart_sentence_split, deduplicate_citations, smart_chunk_by_strategy
 from .vectorstore import Embedding, FaissStore, PGVectorStore
 from . import db
 
 class Orchestrator:
     def __init__(self):
         self.mcp = MCPClient(os.getenv("MCP_BASE", "http://localhost:8000"))
-        self.ds = DeepSeekClient(os.getenv("DEEPSEEK_BASE", "https://api.deepseek.com"), os.getenv("DEEPSEEK_API_KEY", ""))
+        self.ds = DeepSeekClient(
+            os.getenv("DEEPSEEK_BASE", "https://api.deepseek.com"), 
+            os.getenv("DEEPSEEK_API_KEY", ""),
+            os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        )
         backend = os.getenv("VECTOR_BACKEND", "faiss").lower()
         self.embed = Embedding()
         if backend == "pgvector":
@@ -40,6 +44,50 @@ class Orchestrator:
         return res
 
     # Step3: 检索+RAG 生成内容（唯一 MCP 步） → 存 MySQL
+    async def _generate_section_content(self, t: Dict[str, Any], h1: str, h2: str):
+        """生成单个章节内容"""
+        try:
+            query = f"{t['project_name']} {t['research_content']} {h1} {h2}"
+            r = await self.mcp.invoke("arxiv_search", {"query": query, "max_results": 8})
+            items = r.get("items", [])
+            texts = flatten_snippets(items)
+            metas = [{"url": it.get("url"), "title": it.get("title") or it.get("id") } for it in items]
+            if texts:
+                embs = self.embed.encode(texts)
+                self.store.add(embs, texts, metas)
+            q_emb = self.embed.encode([query])[0]
+            retrieved = self.store.search(q_emb, top_k=12)  # 先检索更多
+            retrieved_texts = [rt[0] for rt in retrieved]
+            refs = [rt[1].get("url") for rt in retrieved if rt[1].get("url")]
+            
+            # 引用去重
+            deduplicated_texts = deduplicate_citations(retrieved_texts, similarity_threshold=0.8)
+            
+            # 使用 BM25 重排序
+            reranked = rerank_texts(query, deduplicated_texts, top_k=8)
+            reranked_texts = [item[0] for item in reranked]
+            
+            # 智能分块策略（混合策略：段落 -> 句子 -> token）
+            all_chunks = []
+            for text in reranked_texts:
+                chunks = smart_chunk_by_strategy(text, strategy="mixed", max_tokens=400)
+                all_chunks.extend(chunks)
+            
+            # 根据 token 预算控制上下文长度
+            budgeted_texts = budget_context(all_chunks, max_tokens=1500)
+            context = "\n\n".join(budgeted_texts)
+            system = "你是学术写作助手，请基于证据撰写严谨内容，并给出参考网址。"
+            prompt = (
+                f"【章节】{h1} / {h2}\n【主题】{t['project_name']}\n【研究方向】{t['research_content']}\n【证据】\n{context}\n"
+            )
+            instruction = "输出 JSON：{\n  \"研究内容\": \"...\",\n  \"参考网址\": [\"https://...\"]\n}"
+            ds = await self.ds.chat_json(system, prompt, instruction)
+            # 保障包含 refs（双通道：模型给的 + 我们检索的）
+            merged_refs = list({*(ds.get("参考网址", []) or []), *[u for u in refs if u]})
+            return f"{h1}::{h2}", {"研究内容": ds.get("研究内容") or ds.get("content"), "参考网址": merged_refs}
+        except Exception as e:
+            return f"{h1}::{h2}", {"研究内容": f"生成{h1}/{h2}内容时出错: {str(e)}", "参考网址": []}
+
     async def step3_content(self, task_id: str):
         t = await db.get_task(task_id)
         if not t:
@@ -48,32 +96,30 @@ class Orchestrator:
         if not outline:
             raise ValueError("run step2 first")
         outline_list = outline.get("研究大纲") or []
-        section_results: Dict[str, Any] = {}
+        
+        # 收集所有需要处理的章节
+        tasks = []
         for block in outline_list:
             h1 = block.get("一级标题")
             for h2 in block.get("二级标题", []):
-                query = f"{t['project_name']} {t['research_content']} {h1} {h2}"
-                r = await self.mcp.invoke("arxiv_search", {"query": query, "max_results": 8})
-                items = r.get("items", [])
-                texts = flatten_snippets(items)
-                metas = [{"url": it.get("url"), "title": it.get("title") or it.get("id") } for it in items]
-                if texts:
-                    embs = self.embed.encode(texts)
-                    self.store.add(embs, texts, metas)
-                q_emb = self.embed.encode([query])[0]
-                retrieved = self.store.search(q_emb, top_k=6)
-                retrieved_texts = [rt[0] for rt in retrieved]
-                refs = [rt[1].get("url") for rt in retrieved if rt[1].get("url")]
-                context = "\n\n".join(chunk_texts(retrieved_texts)[:12])
-                system = "你是学术写作助手，请基于证据撰写严谨内容，并给出参考网址。"
-                prompt = (
-                    f"【章节】{h1} / {h2}\n【主题】{t['project_name']}\n【研究方向】{t['research_content']}\n【证据】\n{context}\n"
-                )
-                instruction = "输出 JSON：{\n  \"研究内容\": \"...\",\n  \"参考网址\": [\"https://...\"]\n}"
-                ds = await self.ds.chat_json(system, prompt, instruction)
-                # 保障包含 refs（双通道：模型给的 + 我们检索的）
-                merged_refs = list({*(ds.get("参考网址", []) or []), *[u for u in refs if u]})
-                section_results[f"{h1}::{h2}"] = {"研究内容": ds.get("研究内容") or ds.get("content"), "参考网址": merged_refs}
+                tasks.append(self._generate_section_content(t, h1, h2))
+        
+        # 并行处理所有章节（限制并发数为3）
+        import asyncio
+        semaphore = asyncio.Semaphore(3)  # 限制并发数
+        
+        async def process_with_limit(task):
+            async with semaphore:
+                return await task
+        
+        # 并发执行
+        results = await asyncio.gather(*[process_with_limit(task) for task in tasks])
+        
+        # 组装结果
+        section_results: Dict[str, Any] = {}
+        for key, value in results:
+            section_results[key] = value
+            
         await db.save_step(task_id, "content", section_results)
         await db.update_task_status(task_id, "step3_done")
         return section_results
@@ -89,10 +135,19 @@ class Orchestrator:
         body_lines, ref_set = [], set()
         for key, val in content_map.items():
             h1, h2 = key.split("::", 1)
-            body_lines.append(f"### {h1} / {h2}\n{val.get('研究内容', '')}\n")
+            content = val.get('研究内容', '')
+            
+            # 使用智能分句优化内容结构
+            sentences = smart_sentence_split(content)
+            formatted_content = '\n'.join(sentences) if sentences else content
+            
+            body_lines.append(f"### {h1} / {h2}\n{formatted_content}\n")
             for u in val.get("参考网址", []) or []:
                 ref_set.add(u)
-        draft = f"# {t['project_name']}\n\n" + "\n".join(body_lines) + "\n\n## 参考文献\n" + "\n".join(f"- {u}" for u in sorted(ref_set))
+        
+        # 去重参考文献
+        unique_refs = list(ref_set)
+        draft = f"# {t['project_name']}\n\n" + "\n".join(body_lines) + "\n\n## 参考文献\n" + "\n".join(f"- {u}" for u in sorted(unique_refs))
         system = "你是学术润色师，请优化行文与结构，保持事实与引用。"
         instruction = "输出润色后的完整 Markdown 正文（包含分章与参考文献）。"
         res = await self.ds.chat_json(system, draft, instruction)

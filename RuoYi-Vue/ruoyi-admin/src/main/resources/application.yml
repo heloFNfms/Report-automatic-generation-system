@@ -127,3 +127,13 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+# 报告生成配置
+report:
+  orchestrator:
+    # 编排器服务地址
+    url: http://localhost:9000
+    # 连接超时时间（毫秒）
+    connectTimeout: 5000
+    # 读取超时时间（毫秒）
+    readTimeout: 30000

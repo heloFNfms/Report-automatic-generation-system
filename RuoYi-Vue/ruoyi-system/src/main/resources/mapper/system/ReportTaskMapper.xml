@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ReportTaskMapper">
+    
+    <resultMap type="ReportTask" id="ReportTaskResult">
+        <result property="taskId"       column="task_id"       />
+        <result property="title"        column="title"          />
+        <result property="description"  column="description"    />
+        <result property="topic"        column="topic"          />
+        <result property="status"       column="status"         />
+        <result property="currentStep"  column="current_step"   />
+        <result property="progress"     column="progress"       />
+        <result property="content"      column="content"        />
+        <result property="errorMessage" column="error_message"  />
+        <result property="startTime"    column="start_time"     />
+        <result property="endTime"      column="end_time"       />
+        <result property="userId"       column="user_id"        />
+        <result property="userName"     column="user_name"      />
+        <result property="configParams" column="config_params"  />
+        <result property="createTime"   column="create_time"    />
+        <result property="updateTime"   column="update_time"    />
+        <result property="remark"       column="remark"         />
+    </resultMap>
+
+    <sql id="selectReportTaskVo">
+        select task_id, title, description, topic, status, current_step, progress, content, error_message, start_time, end_time, user_id, user_name, config_params, create_time, update_time, remark from report_task
+    </sql>
+
+    <select id="selectReportTaskList" parameterType="ReportTask" resultMap="ReportTaskResult">
+        <include refid="selectReportTaskVo"/>
+        <where>  
+            <if test="title != null  and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="description != null  and description != ''"> and description like concat('%', #{description}, '%')</if>
+            <if test="topic != null  and topic != ''"> and topic like concat('%', #{topic}, '%')</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="currentStep != null  and currentStep != ''"> and current_step = #{currentStep}</if>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="userName != null  and userName != ''"> and user_name like concat('%', #{userName}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+                and date_format(create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+                and date_format(create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+    
+    <select id="selectReportTaskByTaskId" parameterType="String" resultMap="ReportTaskResult">
+        <include refid="selectReportTaskVo"/>
+        where task_id = #{taskId}
+    </select>
+        
+    <insert id="insertReportTask" parameterType="ReportTask">
+        insert into report_task
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="taskId != null">task_id,</if>
+            <if test="title != null">title,</if>
+            <if test="description != null">description,</if>
+            <if test="topic != null">topic,</if>
+            <if test="status != null">status,</if>
+            <if test="currentStep != null">current_step,</if>
+            <if test="progress != null">progress,</if>
+            <if test="content != null">content,</if>
+            <if test="errorMessage != null">error_message,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="configParams != null">config_params,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="taskId != null">#{taskId},</if>
+            <if test="title != null">#{title},</if>
+            <if test="description != null">#{description},</if>
+            <if test="topic != null">#{topic},</if>
+            <if test="status != null">#{status},</if>
+            <if test="currentStep != null">#{currentStep},</if>
+            <if test="progress != null">#{progress},</if>
+            <if test="content != null">#{content},</if>
+            <if test="errorMessage != null">#{errorMessage},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="userName != null">#{userName},</if>
+            <if test="configParams != null">#{configParams},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateReportTask" parameterType="ReportTask">
+        update report_task
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="topic != null">topic = #{topic},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="currentStep != null">current_step = #{currentStep},</if>
+            <if test="progress != null">progress = #{progress},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
+            <if test="configParams != null">config_params = #{configParams},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where task_id = #{taskId}
+    </update>
+
+    <delete id="deleteReportTaskByTaskId" parameterType="String">
+        delete from report_task where task_id = #{taskId}
+    </delete>
+
+    <delete id="deleteReportTaskByTaskIds" parameterType="String">
+        delete from report_task where task_id in 
+        <foreach item="taskId" collection="array" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+    </delete>
+
+</mapper>

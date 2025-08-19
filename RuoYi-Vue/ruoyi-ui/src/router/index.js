@@ -161,6 +161,27 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
+  },
+  {
+    path: '/system/report',
+    component: Layout,
+    hidden: false,
+    permissions: ['system:report:list'],
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/system/report/index'),
+        name: 'Report',
+        meta: { title: '报告管理', icon: 'documentation' }
+      },
+      {
+        path: 'wizard',
+        component: () => import('@/views/system/report/wizard'),
+        name: 'ReportWizard',
+        meta: { title: '报告向导', activeMenu: '/system/report' },
+        hidden: true
+      }
+    ]
   }
 ]
 

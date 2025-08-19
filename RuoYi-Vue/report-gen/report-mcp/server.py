@@ -3,10 +3,26 @@ from pydantic import BaseModel
 from typing import Any, Dict
 from utils.cache import Cache
 from tools.arxiv_tool import ArxivTool
+from tools.web_search_tool import WebSearchTool, WebContentTool
+from tools.crossref_tool import CrossrefTool, DOITool, CitationTool
+from tools.pdf_tool import PDFTool, PDFSummaryTool
+from tools.dedup_tool import DedupTool, MergeTool, TextCleanTool
 
 app = FastAPI(title="report-mcp")
 cache = Cache()
-TOOLS = {ArxivTool.name: ArxivTool}
+TOOLS = {
+    ArxivTool.name: ArxivTool,
+    WebSearchTool.name: WebSearchTool,
+    WebContentTool.name: WebContentTool,
+    CrossrefTool.name: CrossrefTool,
+    DOITool.name: DOITool,
+    CitationTool.name: CitationTool,
+    PDFTool.name: PDFTool,
+    PDFSummaryTool.name: PDFSummaryTool,
+    DedupTool.name: DedupTool,
+    MergeTool.name: MergeTool,
+    TextCleanTool.name: TextCleanTool
+}
 
 class Invoke(BaseModel):
     tool: str
