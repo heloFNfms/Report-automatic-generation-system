@@ -8,3 +8,5 @@ nltk
 sentence-transformers
 faiss-cpu
 psycopg[binary]
+sqlalchemy[asyncio]
+asyncmy

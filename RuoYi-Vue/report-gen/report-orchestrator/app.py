@@ -2,8 +2,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from core.orchestrator import Orchestrator
+from core import db
 
-app = FastAPI(title="report-orchestrator (new flow)")
+app = FastAPI(title="report-orchestrator (persisted)")
 orc = Orchestrator()
 
 class Step1In(BaseModel):
@@ -14,9 +15,20 @@ class Step1In(BaseModel):
 class TaskIn(BaseModel):
     task_id: str
 
+@app.on_event("startup")
+async def on_startup():
+    await db.init_db()
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.get("/task/{task_id}")
+async def get_task(task_id: str):
+    t = await db.get_task(task_id)
+    if not t:
+        raise HTTPException(404, "not found")
+    return t
 
 @app.post("/step1")
 async def step1(body: Step1In):

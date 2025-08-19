@@ -1,8 +1,8 @@
 from typing import List
 
-def flatten_snippets(results) -> List[str]:
+def flatten_snippets(items) -> List[str]:
     texts = []
-    for it in results:
+    for it in items:
         t = it.get("summary") or it.get("snippet") or it.get("title")
         if t:
             texts.append(t)

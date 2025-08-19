@@ -1,20 +1,11 @@
 import httpx, os, json
-
 class DeepSeekClient:
     def __init__(self, base: str, key: str):
         self.base = base.rstrip('/')
         self.key = key
-
     async def chat_json(self, system: str, prompt: str, instruction: str):
-        # 兼容任意 Chat API：返回文本中如含 JSON 则解析
         headers = {"Authorization": f"Bearer {self.key}"} if self.key else {}
-        body = {
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": prompt + "\n" + instruction}
-            ],
-            "max_tokens": 2000
-        }
+        body = {"messages": [{"role": "system", "content": system},{"role": "user", "content": prompt+"\n"+instruction}],"max_tokens": 2000}
         async with httpx.AsyncClient(timeout=60.0) as client:
             r = await client.post(f"{self.base}/v1/chat", json=body, headers=headers)
             r.raise_for_status()
