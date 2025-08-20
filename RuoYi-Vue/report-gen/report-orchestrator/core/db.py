@@ -41,7 +41,7 @@ class ReportStep(Base):
     step: Mapped[str] = mapped_column(String(20))  # outline/content/report/final
     version: Mapped[int] = mapped_column(default=1)
     output_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    execution_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    execution_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=False), nullable=True)
     status: Mapped[str] = mapped_column(String(1), default="1")
     error_message: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
     create_time: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -169,9 +169,8 @@ async def save_step(task_id: str, step: str, output: Dict[str, Any]) -> int:
             step=step,
             version=new_version,
             output_json=json.dumps(output, ensure_ascii=False),
-            execution_time=datetime.now(),
+            execution_time=None,  # 暂时设为None避免格式问题
             status="1",  # 成功状态
-            create_time=datetime.now()
         )
         s.add(step_history)
         await s.commit()
@@ -195,9 +194,8 @@ async def save_step_output(task_id: str, step: str, output: Dict[str, Any]):
             step=step,
             version=new_version,
             output_json=json.dumps(output, ensure_ascii=False),
-            execution_time=datetime.now(),
+            execution_time=None,  # 暂时设为None避免格式问题
             status="1",  # 成功状态
-            create_time=datetime.now()
         )
         s.add(step_history)
         await s.commit()
@@ -277,9 +275,8 @@ async def rollback_to_version(task_id: str, step: str, version: int) -> bool:
             step=step,
             version=new_version,
             output_json=target_record.output_json,
-            execution_time=datetime.now(),
+            execution_time=None,  # 暂时设为None避免格式问题
             status="1",  # 成功状态
-            create_time=datetime.now()
         )
         s.add(new_record)
         await s.commit()

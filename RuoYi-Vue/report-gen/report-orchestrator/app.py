@@ -8,9 +8,14 @@ from core import db
 from core.logger import logger, perf_logger
 from core.security import security_manager
 from core.export import export_manager
+from api.cache_api import cache_router
 import time
 import uuid
 import os
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 app = FastAPI(title="Report Orchestrator", version="1.0.0")
 
@@ -22,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 包含缓存API路由
+app.include_router(cache_router, prefix="/api/cache", tags=["cache"])
 
 # 请求日志和安全中间件
 @app.middleware("http")

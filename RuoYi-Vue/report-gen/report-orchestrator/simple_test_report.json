@@ -1,0 +1,59 @@
+{
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "details": [
+    {
+      "test_name": "健康检查",
+      "success": true,
+      "message": "服务正常运行",
+      "timestamp": "2025-08-20T11:46:53.965328",
+      "response_data": null
+    },
+    {
+      "test_name": "API文档访问",
+      "success": true,
+      "message": "文档页面可访问",
+      "timestamp": "2025-08-20T11:46:54.472750",
+      "response_data": null
+    },
+    {
+      "test_name": "Step1基本功能",
+      "success": true,
+      "message": "主题生成成功，任务ID: 3d83489a-a7aa-44a4-afe9-57decf728ce6",
+      "timestamp": "2025-08-20T11:46:54.994338",
+      "response_data": null
+    },
+    {
+      "test_name": "任务查询",
+      "success": true,
+      "message": "任务信息获取成功",
+      "timestamp": "2025-08-20T11:46:55.506208",
+      "response_data": null
+    },
+    {
+      "test_name": "Step2错误处理",
+      "success": true,
+      "message": "正确返回错误状态码: 400",
+      "timestamp": "2025-08-20T11:46:56.015070",
+      "response_data": null
+    },
+    {
+      "test_name": "缓存API访问",
+      "success": true,
+      "message": "缓存统计信息获取成功",
+      "timestamp": "2025-08-20T11:46:56.522603",
+      "response_data": null
+    },
+    {
+      "test_name": "导出参数验证",
+      "success": true,
+      "message": "正确验证无效参数: 404",
+      "timestamp": "2025-08-20T11:46:57.036587",
+      "response_data": null
+    }
+  ]
+}

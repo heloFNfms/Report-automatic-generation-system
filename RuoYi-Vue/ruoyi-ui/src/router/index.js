@@ -180,6 +180,13 @@ export const dynamicRoutes = [
         name: 'ReportWizard',
         meta: { title: '报告向导', activeMenu: '/system/report' },
         hidden: true
+      },
+      {
+        path: 'editor',
+        component: () => import('@/views/system/report/editor'),
+        name: 'ReportEditor',
+        meta: { title: '在线编辑', activeMenu: '/system/report' },
+        hidden: true
       }
     ]
   }

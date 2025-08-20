@@ -47,9 +47,14 @@
           <el-card class="step-card">
             <div slot="header" class="clearfix">
               <span class="step-title">步骤2：研究大纲</span>
-              <el-button style="float: right; padding: 3px 0" type="text" @click="rerunStep2" :loading="step2Loading">
-                <i class="el-icon-refresh"></i> 重新生成
-              </el-button>
+              <div style="float: right;">
+                <el-button type="text" @click="showStepHistory(2)" size="mini">
+                  <i class="el-icon-time"></i> 历史版本
+                </el-button>
+                <el-button type="text" @click="rerunStep2" :loading="step2Loading" size="mini">
+                  <i class="el-icon-refresh"></i> 重新生成
+                </el-button>
+              </div>
             </div>
             <div v-if="step2Loading" class="loading-content">
               <el-progress :percentage="step2Progress" :show-text="false"></el-progress>
@@ -80,9 +85,14 @@
           <el-card class="step-card">
             <div slot="header" class="clearfix">
               <span class="step-title">步骤3：章节内容生成</span>
-              <el-button style="float: right; padding: 3px 0" type="text" @click="rerunStep3" :loading="step3Loading">
-                <i class="el-icon-refresh"></i> 重新生成
-              </el-button>
+              <div style="float: right;">
+                <el-button type="text" @click="showStepHistory(3)" size="mini">
+                  <i class="el-icon-time"></i> 历史版本
+                </el-button>
+                <el-button type="text" @click="rerunStep3" :loading="step3Loading" size="mini">
+                  <i class="el-icon-refresh"></i> 重新生成
+                </el-button>
+              </div>
             </div>
             <div v-if="step3Loading" class="loading-content">
               <el-progress :percentage="step3Progress" :show-text="false"></el-progress>
@@ -93,18 +103,22 @@
                 <el-collapse v-model="activeSections">
                   <el-collapse-item :title="section.title" :name="index">
                     <div class="section-content" v-html="section.content"></div>
+                    
+                    <!-- 参考网址区域 -->
                     <div v-if="section.references && section.references.length > 0" class="section-references">
-                      <h4>参考文献：</h4>
+                      <h4><i class="el-icon-link"></i> 参考网址</h4>
                       <ul>
                         <li v-for="(ref, refIndex) in section.references" :key="refIndex">
                           <a :href="ref.url" target="_blank" class="reference-link">
-                            {{ ref.title }}
+                            {{ ref.title || ref.url }}
                           </a>
+                          <span v-if="ref.description" class="reference-desc"> - {{ ref.description }}</span>
                         </li>
                       </ul>
                     </div>
+                    
                     <div class="section-actions">
-                      <el-button size="mini" @click="rerunSection(index)" :loading="sectionLoading[index]">
+                      <el-button size="mini" @click="regenerateSection(section.id || index)" :loading="sectionLoading[index]">
                         重新生成此章节
                       </el-button>
                     </div>
@@ -123,9 +137,14 @@
           <el-card class="step-card">
             <div slot="header" class="clearfix">
               <span class="step-title">步骤4：报告组装润色</span>
-              <el-button style="float: right; padding: 3px 0" type="text" @click="rerunStep4" :loading="step4Loading">
-                <i class="el-icon-refresh"></i> 重新组装
-              </el-button>
+              <div style="float: right;">
+                <el-button type="text" @click="showStepHistory(4)" size="mini">
+                  <i class="el-icon-time"></i> 历史版本
+                </el-button>
+                <el-button type="text" @click="rerunStep4" :loading="step4Loading" size="mini">
+                  <i class="el-icon-refresh"></i> 重新组装
+                </el-button>
+              </div>
             </div>
             <div v-if="step4Loading" class="loading-content">
               <el-progress :percentage="step4Progress" :show-text="false"></el-progress>
@@ -146,12 +165,24 @@
             <div slot="header" class="clearfix">
               <span class="step-title">步骤5：最终报告</span>
               <div style="float: right;">
-                <el-button type="text" @click="rerunStep5" :loading="step5Loading">
+                <el-button type="text" @click="showStepHistory(5)" size="mini">
+                  <i class="el-icon-time"></i> 历史版本
+                </el-button>
+                <el-button type="text" @click="rerunStep5" :loading="step5Loading" size="mini">
                   <i class="el-icon-refresh"></i> 重新生成
                 </el-button>
-                <el-button type="primary" size="mini" @click="exportReport" :loading="exportLoading">
-                  <i class="el-icon-download"></i> 导出报告
+                <el-button type="primary" size="mini" @click="openEditor">
+                  <i class="el-icon-edit"></i> 在线编辑
                 </el-button>
+                <el-dropdown @command="exportReport" trigger="click">
+                  <el-button type="success" size="mini" :loading="exportLoading">
+                    <i class="el-icon-download"></i> 导出报告 <i class="el-icon-arrow-down el-icon--right"></i>
+                  </el-button>
+                  <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item command="pdf">导出为PDF</el-dropdown-item>
+                    <el-dropdown-item command="word">导出为Word</el-dropdown-item>
+                  </el-dropdown-menu>
+                </el-dropdown>
               </div>
             </div>
             <div v-if="step5Loading" class="loading-content">
@@ -192,11 +223,43 @@
         </el-button>
       </div>
     </div>
+
+    <!-- 历史版本对话框 -->
+    <el-dialog title="历史版本" :visible.sync="historyDialogVisible" width="60%">
+      <el-table :data="stepHistoryList" v-loading="historyLoading">
+        <el-table-column prop="version" label="版本" width="80"></el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+        <el-table-column prop="status" label="状态" width="100">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.status === 'SUCCESS' ? 'success' : 'danger'">
+              {{ scope.row.status === 'SUCCESS' ? '成功' : '失败' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="150">
+          <template slot-scope="scope">
+            <el-button size="mini" @click="previewHistory(scope.row)">预览</el-button>
+            <el-button size="mini" type="primary" @click="rollbackToVersion(scope.row)">回滚</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="historyDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 历史版本预览对话框 -->
+    <el-dialog title="版本预览" :visible.sync="previewDialogVisible" width="80%">
+      <div v-html="previewContent" class="preview-content"></div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="previewDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { executeStep1, executeStep2, executeStep3, executeStep4, executeStep5, getStepResult } from "@/api/system/report"
+import { executeStep1, executeStep2, executeStep3, executeStep4, executeStep5, getStepResult, getStepHistory, rerunStep, rollbackReport, exportReport, downloadReportFile } from "@/api/system/report"
 
 export default {
   name: "ReportWizard",
@@ -267,7 +330,15 @@ export default {
       },
       
       // 导出
-      exportLoading: false
+      exportLoading: false,
+      
+      // 历史版本相关
+      historyDialogVisible: false,
+      previewDialogVisible: false,
+      historyLoading: false,
+      stepHistoryList: [],
+      previewContent: '',
+      currentHistoryStep: null
     }
   },
   methods: {
@@ -457,30 +528,82 @@ export default {
     },
     
     // 重新生成章节
-    async rerunSection(sectionIndex) {
-      this.$set(this.sectionLoading, sectionIndex, true)
+    async regenerateSection(sectionId) {
       try {
-        // 这里可以调用重新生成特定章节的API
-        await new Promise(resolve => setTimeout(resolve, 2000)) // 模拟API调用
+        await this.$confirm('确定要重新生成此章节吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        
+        // 调用重新生成单个章节的API
+        const response = await rerunStep(this.taskId, 3, { sectionId })
         this.$message.success('章节重新生成成功')
+        // 重新加载步骤3结果
+        await this.loadStepResult(3)
       } catch (error) {
-        this.$message.error('章节重新生成失败')
-      } finally {
-        this.$set(this.sectionLoading, sectionIndex, false)
+        if (error !== 'cancel') {
+          this.$message.error('重新生成章节失败：' + error.message)
+        }
       }
     },
     
     // 导出报告
-    async exportReport() {
+    async exportReport(format = 'pdf') {
       this.exportLoading = true
       try {
+        // 显示导出进度提示
+        const loadingInstance = this.$loading({
+          lock: true,
+          text: '正在生成报告文件，请稍候...',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
+        
         // 调用导出API
-        await new Promise(resolve => setTimeout(resolve, 2000)) // 模拟导出
-        this.$message.success('报告导出成功')
+        const response = await exportReport(this.taskId, { format })
+        
+        if (response.data && response.data.filename) {
+          // 如果返回了文件名，则下载文件
+          await this.downloadFile(response.data.filename)
+          this.$message.success('报告导出成功')
+        } else {
+          this.$message.error('导出失败：未获取到文件信息')
+        }
+        
+        loadingInstance.close()
       } catch (error) {
-        this.$message.error('报告导出失败')
+        this.$message.error('报告导出失败：' + (error.message || '未知错误'))
+        // 提供重试选项
+        this.$confirm('导出失败，是否重试？', '提示', {
+          confirmButtonText: '重试',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.exportReport(format)
+        }).catch(() => {})
       } finally {
         this.exportLoading = false
+      }
+    },
+    
+    // 下载文件
+    async downloadFile(filename) {
+      try {
+        const response = await downloadReportFile(this.taskId, filename)
+        
+        // 创建下载链接
+        const blob = new Blob([response], { type: 'application/octet-stream' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      } catch (error) {
+        this.$message.error('文件下载失败：' + (error.message || '未知错误'))
       }
     },
     
@@ -497,14 +620,102 @@ export default {
     
     // 解析章节内容
     parseContentSections(data) {
-      // 这里根据实际返回的数据结构解析章节内容
-      this.contentSections = data.sections || []
+      // 确保每个章节都有references字段
+      this.contentSections = (data.sections || []).map(section => ({
+        ...section,
+        references: section.references || []
+      }))
     },
     
     // 获取下一步按钮文本
     getNextButtonText() {
       const texts = ['开始生成', '生成大纲', '生成内容', '组装报告', '生成摘要']
       return texts[this.currentStep] || '下一步'
+    },
+
+    // 显示步骤历史版本
+    async showStepHistory(step) {
+      this.currentHistoryStep = step
+      this.historyDialogVisible = true
+      this.historyLoading = true
+      
+      try {
+        const response = await getStepHistory(this.taskId, step)
+        this.stepHistoryList = response.data || []
+      } catch (error) {
+        this.$message.error('获取历史版本失败：' + error.message)
+      } finally {
+        this.historyLoading = false
+      }
+    },
+
+    // 预览历史版本
+    previewHistory(historyItem) {
+      this.previewContent = historyItem.content || '暂无内容'
+      this.previewDialogVisible = true
+    },
+
+    // 回滚到指定版本
+    async rollbackToVersion(historyItem) {
+      try {
+        await this.$confirm('确定要回滚到此版本吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        
+        await rollbackReport(this.taskId, this.currentHistoryStep, historyItem.version)
+        this.$message.success('回滚成功')
+        this.historyDialogVisible = false
+        
+        // 重新加载当前步骤结果
+        await this.loadStepResult(this.currentHistoryStep)
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('回滚失败：' + error.message)
+        }
+      }
+    },
+
+    // 加载步骤结果
+    async loadStepResult(step) {
+      try {
+        const response = await getStepResult(this.taskId, step)
+        const result = response.data
+        
+        switch (step) {
+          case 2:
+            this.step2Result = result
+            this.parseOutline(result)
+            break
+          case 3:
+            this.step3Result = result
+            this.parseContentSections(result)
+            break
+          case 4:
+            this.step4Result = result
+            this.assembledReport = result.content || ''
+            break
+          case 5:
+            this.step5Result = result
+            this.finalReport = {
+              summary: result.summary || '',
+              keywords: result.keywords || [],
+              content: result.content || ''
+            }
+            break
+        }
+      } catch (error) {
+        this.$message.error('加载步骤结果失败：' + error.message)
+      }
+    },
+
+    // 打开在线编辑器
+    openEditor() {
+      this.$router.push({
+        path: '/system/report/editor',
+        query: { taskId: this.taskId }
+      })
     }
   },
   
@@ -633,6 +844,20 @@ export default {
 
 .reference-link:hover {
   text-decoration: underline;
+}
+
+.reference-desc {
+  color: #909399;
+  font-size: 12px;
+}
+
+.preview-content {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  line-height: 1.6;
 }
 
 .section-actions {

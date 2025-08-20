@@ -1,0 +1,88 @@
+{
+  "summary": {
+    "total": 11,
+    "passed": 9,
+    "failed": 2,
+    "success_rate": 81.81818181818183,
+    "task_id": "50765870-28d8-47a2-892c-aee6bc929f04"
+  },
+  "details": [
+    {
+      "test_name": "健康检查",
+      "success": true,
+      "message": "服务正常运行",
+      "timestamp": "2025-08-20T11:11:50.507075",
+      "response_data": null
+    },
+    {
+      "test_name": "Step1主题生成",
+      "success": true,
+      "message": "任务创建成功，ID: 50765870-28d8-47a2-892c-aee6bc929f04",
+      "timestamp": "2025-08-20T11:11:50.552639",
+      "response_data": null
+    },
+    {
+      "test_name": "任务查询",
+      "success": true,
+      "message": "任务信息获取成功",
+      "timestamp": "2025-08-20T11:11:51.569048",
+      "response_data": null
+    },
+    {
+      "test_name": "API文档访问",
+      "success": true,
+      "message": "端点可访问",
+      "timestamp": "2025-08-20T11:11:51.575053",
+      "response_data": null
+    },
+    {
+      "test_name": "缓存统计访问",
+      "success": false,
+      "message": "端点不存在",
+      "timestamp": "2025-08-20T11:11:51.578857",
+      "response_data": null
+    },
+    {
+      "test_name": "无效任务ID导出",
+      "success": true,
+      "message": "正确验证参数: 404",
+      "timestamp": "2025-08-20T11:11:51.588710",
+      "response_data": null
+    },
+    {
+      "test_name": "无效格式导出",
+      "success": false,
+      "message": "验证失败: 404",
+      "timestamp": "2025-08-20T11:11:51.592955",
+      "response_data": null
+    },
+    {
+      "test_name": "重跑操作参数验证",
+      "success": true,
+      "message": "正确验证参数: 400",
+      "timestamp": "2025-08-20T11:11:52.607000",
+      "response_data": null
+    },
+    {
+      "test_name": "回滚操作参数验证",
+      "success": true,
+      "message": "正确验证参数: 400",
+      "timestamp": "2025-08-20T11:11:52.614956",
+      "response_data": null
+    },
+    {
+      "test_name": "数据库连接",
+      "success": true,
+      "message": "数据库操作正常",
+      "timestamp": "2025-08-20T11:11:52.626762",
+      "response_data": null
+    },
+    {
+      "test_name": "系统清理",
+      "success": true,
+      "message": "清理功能正常",
+      "timestamp": "2025-08-20T11:11:53.635131",
+      "response_data": null
+    }
+  ]
+}

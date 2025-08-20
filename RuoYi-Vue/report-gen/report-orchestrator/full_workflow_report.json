@@ -1,0 +1,35 @@
+{
+  "test_type": "full_workflow",
+  "total_tests": 5,
+  "passed": 3,
+  "failed": 2,
+  "success_rate": 60.0,
+  "task_id": "391601ab-aaf9-4aa7-a81e-ad9c2885863a",
+  "results": [
+    {
+      "test": "Step1创建任务",
+      "success": true,
+      "message": "任务创建成功，ID: 391601ab-aaf9-4aa7-a81e-ad9c2885863a",
+      "timestamp": "2025-08-20T11:36:06.776348"
+    },
+    {
+      "test": "Step2生成大纲",
+      "success": true,
+      "message": "大纲生成成功，包含5个主要章节",
+      "timestamp": "2025-08-20T11:36:24.150917"
+    },
+    {
+      "test": "Step3生成内容",
+      "success": true,
+      "message": "内容生成成功，包含18个章节",
+      "timestamp": "2025-08-20T11:36:42.800168"
+    },
+    {
+      "test": "Step4组装报告",
+      "success": false,
+      "message": "异常: HTTPConnectionPool(host='localhost', port=8001): Read timed out. (read timeout=60)",
+      "timestamp": "2025-08-20T11:37:44.807203"
+    }
+  ],
+  "generated_at": "2025-08-20T11:37:44.810252"
+}

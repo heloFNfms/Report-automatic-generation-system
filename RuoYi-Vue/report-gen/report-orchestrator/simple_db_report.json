@@ -1,0 +1,60 @@
+{
+  "test_summary": {
+    "total_tests": 8,
+    "passed": 8,
+    "failed": 0,
+    "success_rate": "100.0%",
+    "overall_status": "PASS"
+  },
+  "test_details": [
+    {
+      "test_name": "数据库连接",
+      "success": true,
+      "message": "数据库初始化成功",
+      "timestamp": "2025-08-20T11:15:22.792725"
+    },
+    {
+      "test_name": "任务创建",
+      "success": true,
+      "message": "任务创建成功，ID: 9c546655-af09-408c-b5ae-24fd702135f7",
+      "timestamp": "2025-08-20T11:15:22.823586"
+    },
+    {
+      "test_name": "步骤保存",
+      "success": true,
+      "message": "步骤保存成功，版本: 1",
+      "timestamp": "2025-08-20T11:15:22.829746"
+    },
+    {
+      "test_name": "历史查询",
+      "success": true,
+      "message": "历史记录查询成功，数量: 1",
+      "timestamp": "2025-08-20T11:15:22.831921"
+    },
+    {
+      "test_name": "最新版本获取",
+      "success": true,
+      "message": "最新版本获取成功",
+      "timestamp": "2025-08-20T11:15:22.834418"
+    },
+    {
+      "test_name": "多版本保存",
+      "success": true,
+      "message": "多版本保存成功",
+      "timestamp": "2025-08-20T11:15:22.844426"
+    },
+    {
+      "test_name": "回滚功能",
+      "success": true,
+      "message": "回滚功能正常",
+      "timestamp": "2025-08-20T11:15:22.852309"
+    },
+    {
+      "test_name": "权限校验",
+      "success": true,
+      "message": "无效版本回滚被正确拒绝",
+      "timestamp": "2025-08-20T11:15:22.854308"
+    }
+  ],
+  "generated_at": "2025-08-20T11:15:22.854308"
+}

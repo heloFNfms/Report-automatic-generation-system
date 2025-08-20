@@ -177,3 +177,38 @@ export function getStepHistory(taskId, step) {
     method: 'get'
   })
 }
+
+// 重新执行步骤
+export function rerunStep(taskId, step, data) {
+  return request({
+    url: `/system/report/${taskId}/rerun/${step}`,
+    method: 'post',
+    data: data
+  })
+}
+
+// 获取报告编辑内容
+export function getReportEditContent(taskId) {
+  return request({
+    url: `/system/report/${taskId}/edit-content`,
+    method: 'get'
+  })
+}
+
+// 更新报告编辑内容
+export function updateReportContent(data) {
+  return request({
+    url: '/system/report/update-content',
+    method: 'post',
+    data: data
+  })
+}
+
+// 保存章节内容
+export function saveChapterContent(taskId, chapterId, data) {
+  return request({
+    url: `/system/report/${taskId}/chapter/${chapterId}`,
+    method: 'put',
+    data: data
+  })
+}

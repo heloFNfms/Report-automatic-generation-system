@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "created_at": "2025-08-20T10:50:08.163533",
+  "total_vectors": 2,
+  "metadata": [
+    {
+      "text": "AI in Healthcare",
+      "meta": {
+        "url": "https://example.com/ai-healthcare",
+        "title": "AI in Healthcare",
+        "source": "test",
+        "query": "AI healthcare",
+        "doc_index": 0
+      },
+      "id": 0,
+      "hash": "2af4f6ea027bdaba1ccaa895b5f614b0",
+      "added_at": "2025-08-20T10:50:08.162546",
+      "version": 1
+    },
+    {
+      "text": "Deep Learning Medical Imaging",
+      "meta": {
+        "url": "https://example.com/dl-imaging",
+        "title": "Deep Learning Medical Imaging",
+        "source": "test",
+        "query": "deep learning imaging",
+        "doc_index": 1
+      },
+      "id": 1,
+      "hash": "3a2e6ff8e84d1c87080fad35fb8d5b8b",
+      "added_at": "2025-08-20T10:50:08.162546",
+      "version": 1
+    }
+  ]
+}

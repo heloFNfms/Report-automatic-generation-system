@@ -1,0 +1,32 @@
+{
+  "summary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "success_rate": 66.66666666666666,
+    "task_id": "d28f90c8-75dc-4065-b222-eddf4cd25c5b"
+  },
+  "details": [
+    {
+      "test_name": "健康检查",
+      "success": true,
+      "message": "服务正常运行",
+      "timestamp": "2025-08-20T11:10:16.121896",
+      "response_data": null
+    },
+    {
+      "test_name": "Step1主题生成",
+      "success": true,
+      "message": "任务创建成功，ID: d28f90c8-75dc-4065-b222-eddf4cd25c5b",
+      "timestamp": "2025-08-20T11:10:16.152095",
+      "response_data": null
+    },
+    {
+      "test_name": "Step2大纲生成",
+      "success": false,
+      "message": "请求失败: 400, {\"detail\":\"Client error '401 Unauthorized' for url 'https://api.deepseek.com/v1/chat/completions'\\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401\"}",
+      "timestamp": "2025-08-20T11:10:18.531305",
+      "response_data": null
+    }
+  ]
+}

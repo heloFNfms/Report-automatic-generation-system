@@ -14,6 +14,7 @@ try:
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
+    Document = None
 
 try:
     import weasyprint
@@ -245,7 +246,7 @@ class ExportManager:
         except Exception as e:
             return {"error": f"MinIO upload failed: {str(e)}"}
     
-    def _setup_word_styles(self, doc: Document):
+    def _setup_word_styles(self, doc: "Document"):
         """设置 Word 文档样式"""
         # 设置正文样式
         styles = doc.styles
@@ -263,7 +264,7 @@ class ExportManager:
             normal_style.font.name = 'Arial'
             normal_style.font.size = Pt(11)
     
-    def _add_word_metadata(self, doc: Document, task_data: Dict[str, Any]):
+    def _add_word_metadata(self, doc: "Document", task_data: Dict[str, Any]):
         """添加文档元信息"""
         # 添加元信息表格
         table = doc.add_table(rows=4, cols=2)
@@ -288,7 +289,7 @@ class ExportManager:
         
         doc.add_paragraph()  # 添加空行
     
-    def _add_word_outline(self, doc: Document, outline_data: Dict[str, Any]):
+    def _add_word_outline(self, doc: "Document", outline_data: Dict[str, Any]):
         """添加大纲到 Word 文档"""
         doc.add_heading('研究大纲', level=1)
         
@@ -311,7 +312,7 @@ class ExportManager:
         
         doc.add_page_break()
     
-    def _add_word_content(self, doc: Document, sections_data: list):
+    def _add_word_content(self, doc: "Document", sections_data: list):
         """添加章节内容到 Word 文档"""
         doc.add_heading('详细内容', level=1)
         
@@ -333,7 +334,7 @@ class ExportManager:
             
             doc.add_paragraph()  # 添加空行
     
-    def _add_word_final_report(self, doc: Document, final_report: str):
+    def _add_word_final_report(self, doc: "Document", final_report: str):
         """添加最终报告到 Word 文档"""
         doc.add_page_break()
         doc.add_heading('最终报告', level=1)

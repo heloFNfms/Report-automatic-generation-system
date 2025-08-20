@@ -1,0 +1,54 @@
+{
+  "test_summary": {
+    "total_tests": 7,
+    "passed": 4,
+    "failed": 3,
+    "success_rate": "57.1%",
+    "overall_status": "FAIL"
+  },
+  "test_details": [
+    {
+      "test_name": "数据库连接",
+      "success": true,
+      "message": "数据库初始化成功",
+      "timestamp": "2025-08-20T11:13:35.753809"
+    },
+    {
+      "test_name": "任务创建",
+      "success": true,
+      "message": "任务创建成功，ID: d99d1130-0953-4c31-8058-a255240f7f2c",
+      "timestamp": "2025-08-20T11:13:35.956239"
+    },
+    {
+      "test_name": "步骤历史一致性",
+      "success": false,
+      "message": "测试失败: (asyncmy.errors.DataError) (1265, \"Data truncated for column 'execution_time' at row 1\")\n[SQL: INSERT INTO report_step_history (task_id, step, version, output_json, execution_time, status, error_message, create_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)]\n[parameters: ('d99d1130-0953-4c31-8058-a255240f7f2c', 'step1', 1, '{\"content\": \"第一版内容\", \"version\": 1, \"timestamp\": \"2025-08-20T11:13:35.956239\"}', datetime.datetime(2025, 8, 20, 11, 13, 35, 960299), '1', None, datetime.datetime(2025, 8, 20, 11, 13, 35, 960299))]\n(Background on this error at: https://sqlalche.me/e/20/9h9h)",
+      "timestamp": "2025-08-20T11:13:35.963292"
+    },
+    {
+      "test_name": "回滚操作",
+      "success": false,
+      "message": "回滚操作失败",
+      "timestamp": "2025-08-20T11:13:35.967300"
+    },
+    {
+      "test_name": "无效任务ID约束",
+      "success": true,
+      "message": "无效任务ID被正确拒绝",
+      "timestamp": "2025-08-20T11:13:35.970249"
+    },
+    {
+      "test_name": "无效版本回滚",
+      "success": true,
+      "message": "无效版本回滚被正确拒绝",
+      "timestamp": "2025-08-20T11:13:35.973320"
+    },
+    {
+      "test_name": "并发操作",
+      "success": false,
+      "message": "测试失败: (asyncmy.errors.DataError) (1265, \"Data truncated for column 'execution_time' at row 1\")\n[SQL: INSERT INTO report_step_history (task_id, step, version, output_json, execution_time, status, error_message, create_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)]\n[parameters: ('d99d1130-0953-4c31-8058-a255240f7f2c', 'step2', 1, '{\"content\": \"并发内容0\", \"timestamp\": \"2025-08-20T11:13:35.973320\"}', datetime.datetime(2025, 8, 20, 11, 13, 35, 978331), '1', None, datetime.datetime(2025, 8, 20, 11, 13, 35, 978331))]\n(Background on this error at: https://sqlalche.me/e/20/9h9h)",
+      "timestamp": "2025-08-20T11:13:35.981332"
+    }
+  ],
+  "generated_at": "2025-08-20T11:13:35.981332"
+}
