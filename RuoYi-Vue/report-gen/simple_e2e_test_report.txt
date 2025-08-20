@@ -1,20 +1,19 @@
 
 === 简化E2E测试报告 ===
-测试时间: 2025-08-20 11:33:31
+测试时间: 2025-08-20 15:03:46
 测试服务: http://localhost:8001
 
 测试总数: 7
-成功数: 5
-失败数: 2
-成功率: 71.4%
+成功数: 6
+失败数: 1
+成功率: 85.7%
 
 详细结果:
 [✓] Health Check: 服务正常运行
 [✓] API Docs: API文档可访问
-[✓] Step1 Basic: 任务创建成功，ID: 22314809-1101-484d-8d71-eeb656f595d8
+[✓] Step1 Basic: 任务创建成功，ID: 4116fc6c-fee1-428a-9334-8fb7f859b9b1
 [✗] Task Query: 查询结果格式异常
-    详细: {'id': '22314809-1101-484d-8d71-eeb656f595d8', 'project_name': '测试项目', 'company_name': '测试公司', 'rese...
-[✗] Step2 Error Handling: 业务逻辑错误(400)
-    详细: {'detail': "Client error '401 Unauthorized' for url 'https://api.deepseek.com/v1/chat/completions'\n...
+    详细: {'id': '4116fc6c-fee1-428a-9334-8fb7f859b9b1', 'project_name': '测试项目', 'company_name': '测试公司', 'rese...
+[✓] Step2 Error Handling: Step2执行成功
 [✓] Cache API: 缓存API可访问
 [✓] Export Validation: 导出参数验证正常(状态码: 404)

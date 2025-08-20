@@ -220,11 +220,7 @@ class LangChainOrchestrator:
     def __init__(self):
         # 初始化基础组件
         self.mcp = MCPClient(os.getenv("MCP_BASE", "http://localhost:8000"))
-        self.ds = DeepSeekClient(
-            os.getenv("DEEPSEEK_BASE", "https://api.deepseek.com"), 
-            os.getenv("DEEPSEEK_API_KEY", ""),
-            os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
-        )
+        self.ds = DeepSeekClient.from_env()
         
         # 初始化向量存储
         backend = os.getenv("VECTOR_BACKEND", "faiss").lower()

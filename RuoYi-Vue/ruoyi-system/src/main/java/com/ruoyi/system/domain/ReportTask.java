@@ -7,6 +7,10 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+import javax.validation.constraints.Pattern;
+
 /**
  * 报告任务对象 report_task
  * 
@@ -24,23 +28,48 @@ public class ReportTask extends BaseEntity {
 
     /** 任务标题 */
     @Excel(name = "任务标题")
+    @NotBlank(message = "任务标题不能为空")
+    @Size(max = 200, message = "任务标题长度不能超过200个字符")
     private String title;
 
     /** 公司名称 */
     @Excel(name = "公司名称")
+    @NotBlank(message = "公司名称不能为空")
+    @Size(max = 100, message = "公司名称长度不能超过100个字符")
     private String companyName;
 
     /** 任务描述 */
     @Excel(name = "任务描述")
+    @Size(max = 1000, message = "任务描述长度不能超过1000个字符")
     private String description;
 
     /** 报告主题 */
     @Excel(name = "报告主题")
+    @NotBlank(message = "报告主题不能为空")
+    @Size(max = 500, message = "报告主题长度不能超过500个字符")
     private String topic;
 
     /** 任务状态（0待处理 1进行中 2已完成 3失败） */
     @Excel(name = "任务状态", readConverterExp = "0=待处理,1=进行中,2=已完成,3=失败")
     private String status;
+
+    /** 发布状态（0草稿 1已发布 2已归档） */
+    @Excel(name = "发布状态", readConverterExp = "0=草稿,1=已发布,2=已归档")
+    private String publishStatus;
+
+    /** OSS文件路径 */
+    @Excel(name = "OSS文件路径")
+    private String ossFilePath;
+
+    /** 发布时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "发布时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date publishTime;
+
+    /** 归档时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "归档时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date archiveTime;
 
     /** 当前步骤（step1-step5） */
     @Excel(name = "当前步骤")
@@ -132,6 +161,38 @@ public class ReportTask extends BaseEntity {
         return status;
     }
 
+    public void setPublishStatus(String publishStatus) {
+        this.publishStatus = publishStatus;
+    }
+
+    public String getPublishStatus() {
+        return publishStatus;
+    }
+
+    public void setOssFilePath(String ossFilePath) {
+        this.ossFilePath = ossFilePath;
+    }
+
+    public String getOssFilePath() {
+        return ossFilePath;
+    }
+
+    public void setPublishTime(Date publishTime) {
+        this.publishTime = publishTime;
+    }
+
+    public Date getPublishTime() {
+        return publishTime;
+    }
+
+    public void setArchiveTime(Date archiveTime) {
+        this.archiveTime = archiveTime;
+    }
+
+    public Date getArchiveTime() {
+        return archiveTime;
+    }
+
     public void setCurrentStep(String currentStep) {
         this.currentStep = currentStep;
     }
@@ -214,6 +275,10 @@ public class ReportTask extends BaseEntity {
                 .append("description", getDescription())
                 .append("topic", getTopic())
                 .append("status", getStatus())
+                .append("publishStatus", getPublishStatus())
+                .append("ossFilePath", getOssFilePath())
+                .append("publishTime", getPublishTime())
+                .append("archiveTime", getArchiveTime())
                 .append("currentStep", getCurrentStep())
                 .append("progress", getProgress())
                 .append("content", getContent())

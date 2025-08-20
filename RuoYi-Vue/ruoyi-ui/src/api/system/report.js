@@ -134,7 +134,8 @@ export function executeStep1(data) {
 export function executeStep2(taskId) {
   return request({
     url: '/system/report/step2/' + taskId,
-    method: 'post'
+    method: 'post',
+    timeout: 60000 // 60秒超时，适应AI生成的长时间处理
   })
 }
 
@@ -142,7 +143,8 @@ export function executeStep2(taskId) {
 export function executeStep3(taskId) {
   return request({
     url: '/system/report/step3/' + taskId,
-    method: 'post'
+    method: 'post',
+    timeout: 120000 // 120秒超时，内容生成需要更长时间
   })
 }
 
@@ -150,7 +152,8 @@ export function executeStep3(taskId) {
 export function executeStep4(taskId) {
   return request({
     url: '/system/report/step4/' + taskId,
-    method: 'post'
+    method: 'post',
+    timeout: 180000 // 180秒超时，报告组装和润色耗时最长
   })
 }
 
@@ -158,7 +161,8 @@ export function executeStep4(taskId) {
 export function executeStep5(taskId) {
   return request({
     url: '/system/report/step5/' + taskId,
-    method: 'post'
+    method: 'post',
+    timeout: 60000 // 60秒超时
   })
 }
 
@@ -210,5 +214,48 @@ export function saveChapterContent(taskId, chapterId, data) {
     url: `/system/report/${taskId}/chapter/${chapterId}`,
     method: 'put',
     data: data
+  })
+}
+
+// ==================== 报告发布和归档API ====================
+
+// 发布报告
+export function publishReport(taskId) {
+  return request({
+    url: '/system/report/publish/' + taskId,
+    method: 'post'
+  })
+}
+
+// 归档报告
+export function archiveReport(taskId) {
+  return request({
+    url: '/system/report/archive/' + taskId,
+    method: 'post'
+  })
+}
+
+// 批量归档报告
+export function batchArchiveReports(taskIds) {
+  return request({
+    url: '/system/report/archive/batch',
+    method: 'post',
+    data: taskIds
+  })
+}
+
+// 取消发布报告
+export function unpublishReport(taskId) {
+  return request({
+    url: '/system/report/unpublish/' + taskId,
+    method: 'post'
+  })
+}
+
+// 恢复归档报告
+export function restoreReport(taskId) {
+  return request({
+    url: '/system/report/restore/' + taskId,
+    method: 'post'
   })
 }

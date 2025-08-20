@@ -22,8 +22,8 @@
               <el-form-item label="项目名称" prop="title">
                 <el-input v-model="reportForm.title" placeholder="请输入项目名称" maxlength="100" show-word-limit></el-input>
               </el-form-item>
-              <el-form-item label="公司名称" prop="company">
-                <el-input v-model="reportForm.company" placeholder="请输入公司名称" maxlength="100" show-word-limit></el-input>
+              <el-form-item label="公司名称" prop="companyName">
+                <el-input v-model="reportForm.companyName" placeholder="请输入公司名称" maxlength="100" show-word-limit></el-input>
               </el-form-item>
               <el-form-item label="研究主题" prop="topic">
                 <el-input v-model="reportForm.topic" placeholder="请输入研究主题" maxlength="200" show-word-limit></el-input>
@@ -102,19 +102,52 @@
               <div v-for="(section, index) in contentSections" :key="index" class="section-item">
                 <el-collapse v-model="activeSections">
                   <el-collapse-item :title="section.title" :name="index">
-                    <div class="section-content" v-html="section.content"></div>
+                    <SafeHtml class="section-content"  :content="section.content" />
                     
                     <!-- 参考网址区域 -->
-                    <div v-if="section.references && section.references.length > 0" class="section-references">
+                    <div class="section-references">
                       <h4><i class="el-icon-link"></i> 参考网址</h4>
-                      <ul>
+                      
+                      <!-- 显示现有参考网址 -->
+                      <ul v-if="section.references && section.references.length > 0">
                         <li v-for="(ref, refIndex) in section.references" :key="refIndex">
                           <a :href="ref.url" target="_blank" class="reference-link">
                             {{ ref.title || ref.url }}
                           </a>
                           <span v-if="ref.description" class="reference-desc"> - {{ ref.description }}</span>
+                          <el-button type="text" size="mini" @click="removeReference(index, refIndex)" class="remove-ref-btn">
+                            <i class="el-icon-delete"></i>
+                          </el-button>
                         </li>
                       </ul>
+                      
+                      <!-- 添加新参考网址 -->
+                      <div class="add-reference">
+                        <el-input
+                          v-model="section.newReferenceUrl"
+                          placeholder="请输入参考网址 (如: https://example.com)"
+                          size="small"
+                          style="margin-bottom: 8px;"
+                        >
+                          <template slot="prepend">网址</template>
+                        </el-input>
+                        <el-input
+                          v-model="section.newReferenceTitle"
+                          placeholder="请输入网址标题 (可选)"
+                          size="small"
+                          style="margin-bottom: 8px;"
+                        >
+                          <template slot="prepend">标题</template>
+                        </el-input>
+                        <el-button 
+                          type="primary" 
+                          size="mini" 
+                          @click="addReference(index)"
+                          :disabled="!section.newReferenceUrl"
+                        >
+                          <i class="el-icon-plus"></i> 添加参考网址
+                        </el-button>
+                      </div>
                     </div>
                     
                     <div class="section-actions">
@@ -151,7 +184,7 @@
               <p class="loading-text">正在组装润色报告内容...</p>
             </div>
             <div v-else-if="step4Result" class="report-preview">
-              <div class="report-content" v-html="assembledReport"></div>
+              <SafeHtml class="report-content"  :content="assembledReport" />
             </div>
             <div v-else class="empty-content">
               <el-empty description="暂无报告内容"></el-empty>
@@ -202,7 +235,7 @@
               </div>
               <div class="report-content">
                 <h3>完整报告</h3>
-                <div v-html="finalReport.content"></div>
+                <SafeHtml  :content="finalReport.content" />
               </div>
             </div>
             <div v-else class="empty-content">
@@ -250,7 +283,7 @@
 
     <!-- 历史版本预览对话框 -->
     <el-dialog title="版本预览" :visible.sync="previewDialogVisible" width="80%">
-      <div v-html="previewContent" class="preview-content"></div>
+      <SafeHtml  class="preview-content" :content="previewContent" />
       <div slot="footer" class="dialog-footer">
         <el-button @click="previewDialogVisible = false">关闭</el-button>
       </div>
@@ -259,20 +292,34 @@
 </template>
 
 <script>
+import SafeHtml from "@/components/Security/SafeHtml.vue"
 import { executeStep1, executeStep2, executeStep3, executeStep4, executeStep5, getStepResult, getStepHistory, rerunStep, rollbackReport, exportReport, downloadReportFile } from "@/api/system/report"
 
 export default {
   name: "ReportWizard",
+  components: {
+    SafeHtml
+  },
   data() {
     return {
+// 当前步骤
       currentStep: 0,
       taskId: null,
       nextStepLoading: false,
       
+      // 步骤完成状态
+      stepCompleted: {
+        step1: false,
+        step2: false,
+        step3: false,
+        step4: false,
+        step5: false
+      },
+      
       // 步骤1表单
       reportForm: {
         title: '',
-        company: '',
+        companyName: '',
         topic: '',
         description: ''
       },
@@ -281,7 +328,7 @@ export default {
           { required: true, message: '请输入项目名称', trigger: 'blur' },
           { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
         ],
-        company: [
+        companyName: [
           { required: true, message: '请输入公司名称', trigger: 'blur' },
           { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
         ],
@@ -351,19 +398,45 @@ export default {
         
         // 执行步骤1
         await this.executeStep1()
-      } else if (this.currentStep === 1) {
-        // 执行步骤2
-        await this.executeStep2()
-      } else if (this.currentStep === 2) {
-        // 执行步骤3
-        await this.executeStep3()
-      } else if (this.currentStep === 3) {
-        // 执行步骤4
-        await this.executeStep4()
-      }
-      
-      if (this.currentStep < 4) {
+        this.stepCompleted.step1 = true
+        // 步骤1执行完成后直接跳转到步骤2
         this.currentStep++
+      } else if (this.currentStep === 1) {
+        if (!this.stepCompleted.step2) {
+          // 执行步骤2
+          await this.executeStep2()
+          this.stepCompleted.step2 = true
+        } else {
+          // 步骤2已完成，跳转到下一步
+          this.currentStep++
+        }
+      } else if (this.currentStep === 2) {
+        if (!this.stepCompleted.step3) {
+          // 执行步骤3
+          await this.executeStep3()
+          this.stepCompleted.step3 = true
+        } else {
+          // 步骤3已完成，跳转到下一步
+          this.currentStep++
+        }
+      } else if (this.currentStep === 3) {
+        if (!this.stepCompleted.step4) {
+          // 执行步骤4
+          await this.executeStep4()
+          this.stepCompleted.step4 = true
+        } else {
+          // 步骤4已完成，跳转到下一步
+          this.currentStep++
+          // 进入步骤5后自动执行
+          await this.executeStep5()
+          this.stepCompleted.step5 = true
+        }
+      } else if (this.currentStep === 4) {
+        if (!this.stepCompleted.step5) {
+          // 执行步骤5
+          await this.executeStep5()
+          this.stepCompleted.step5 = true
+        }
       }
     },
     
@@ -438,6 +511,7 @@ export default {
         
         clearInterval(progressInterval)
         this.step3Progress = 100
+        this.stepCompleted.step3 = true
         this.$message.success('章节内容生成成功')
       } catch (error) {
         this.$message.error('内容生成失败：' + error.message)
@@ -614,23 +688,126 @@ export default {
     
     // 解析大纲数据
     parseOutline(data) {
-      // 这里根据实际返回的数据结构解析大纲
-      this.outlineTree = data.outline || []
+      // 解析后端返回的大纲数据结构
+      if (data.outline && data.outline['研究大纲']) {
+        this.outlineTree = data.outline['研究大纲'].map(item => {
+          const node = {
+            title: item['一级标题'],
+            children: []
+          }
+          
+          if (item['二级标题'] && Array.isArray(item['二级标题'])) {
+            node.children = item['二级标题'].map(subtitle => ({
+              title: subtitle
+            }))
+          }
+          
+          return node
+        })
+      } else {
+        this.outlineTree = []
+      }
     },
     
     // 解析章节内容
     parseContentSections(data) {
-      // 确保每个章节都有references字段
-      this.contentSections = (data.sections || []).map(section => ({
-        ...section,
-        references: section.references || []
-      }))
+      // 处理后端返回的数据结构：{"章节名称": {"研究内容": "...", "参考网址": [...]}}
+      if (data && typeof data === 'object') {
+        this.contentSections = Object.keys(data).map(sectionKey => {
+          const sectionData = data[sectionKey]
+          const [h1, h2] = sectionKey.split('::')
+          
+          // 处理参考网址，确保格式正确
+          let references = []
+          if (sectionData['参考网址'] && Array.isArray(sectionData['参考网址'])) {
+            references = sectionData['参考网址'].map(ref => {
+              if (typeof ref === 'string') {
+                return { url: ref, title: ref }
+              } else if (typeof ref === 'object' && ref.url) {
+                return { url: ref.url, title: ref.title || ref.url }
+              }
+              return null
+            }).filter(ref => ref !== null)
+          }
+          
+          return {
+            id: sectionKey,
+            title: h2 ? `${h1} - ${h2}` : h1,
+            content: sectionData['研究内容'] || '',
+            references: references,
+            newReferenceUrl: '',
+            newReferenceTitle: ''
+          }
+        })
+      } else {
+        this.contentSections = []
+      }
+    },
+    
+    // 添加参考网址
+    addReference(sectionIndex) {
+      const section = this.contentSections[sectionIndex]
+      if (!section.newReferenceUrl) {
+        this.$message.warning('请输入参考网址')
+        return
+      }
+      
+      // 验证URL格式
+      const urlPattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+(\/.*)?$/
+      if (!urlPattern.test(section.newReferenceUrl)) {
+        this.$message.warning('请输入有效的网址格式')
+        return
+      }
+      
+      // 确保URL以http://或https://开头
+      let url = section.newReferenceUrl
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url
+      }
+      
+      const newReference = {
+        url: url,
+        title: section.newReferenceTitle || url,
+        description: ''
+      }
+      
+      if (!section.references) {
+        section.references = []
+      }
+      
+      section.references.push(newReference)
+      section.newReferenceUrl = ''
+      section.newReferenceTitle = ''
+      
+      this.$message.success('参考网址添加成功')
+    },
+    
+    // 删除参考网址
+    removeReference(sectionIndex, refIndex) {
+      this.$confirm('确定要删除这个参考网址吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.contentSections[sectionIndex].references.splice(refIndex, 1)
+        this.$message.success('参考网址删除成功')
+      }).catch(() => {})
     },
     
     // 获取下一步按钮文本
     getNextButtonText() {
-      const texts = ['开始生成', '生成大纲', '生成内容', '组装报告', '生成摘要']
-      return texts[this.currentStep] || '下一步'
+      if (this.currentStep === 0) {
+        return '开始生成'
+      } else if (this.currentStep === 1) {
+        return this.stepCompleted.step2 ? '下一步' : '生成大纲'
+      } else if (this.currentStep === 2) {
+        return this.stepCompleted.step3 ? '下一步' : '生成内容'
+      } else if (this.currentStep === 3) {
+        return this.stepCompleted.step4 ? '下一步' : '组装报告'
+      } else if (this.currentStep === 4) {
+        return this.stepCompleted.step5 ? '查看报告' : '生成摘要'
+      }
+      return '下一步'
     },
 
     // 显示步骤历史版本
@@ -849,6 +1026,38 @@ export default {
 .reference-desc {
   color: #909399;
   font-size: 12px;
+}
+
+.remove-ref-btn {
+  margin-left: 10px;
+  color: #f56c6c;
+}
+
+.remove-ref-btn:hover {
+  color: #f56c6c;
+  background-color: #fef0f0;
+}
+
+.add-reference {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 4px;
+}
+
+.add-reference .el-input {
+  margin-bottom: 8px;
+}
+
+.section-references li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.section-references li .reference-link {
+  flex: 1;
 }
 
 .preview-content {

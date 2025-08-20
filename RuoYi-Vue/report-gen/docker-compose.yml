@@ -60,9 +60,15 @@ services:
       - "9000:9000"
     environment:
       - MCP_BASE=http://report-mcp:8000
-      - DEEPSEEK_API_KEY=sk-fb80d84c81ab42b782b69ed7997a094b
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - DEEPSEEK_BASE=https://api.deepseek.com
       - DEEPSEEK_MODEL=deepseek-chat
+      - DEEPSEEK_MAX_RETRIES=3
+      - DEEPSEEK_RETRY_DELAY=1.0
+      - DEEPSEEK_RETRY_BACKOFF=2.0
+      - DEEPSEEK_TIMEOUT=60.0
+      - DEEPSEEK_RATE_LIMIT_PER_MINUTE=60
+      - DEEPSEEK_RATE_LIMIT_PER_HOUR=3600
       - MYSQL_DSN=mysql+asyncmy://user:WZY216814wzy@mysql:3306/analyze_db?charset=utf8mb4
       - VECTOR_BACKEND=faiss
       - FAISS_INDEX_PATH=/app/data/faiss.index

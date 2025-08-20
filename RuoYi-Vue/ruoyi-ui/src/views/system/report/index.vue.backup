@@ -1,0 +1,502 @@
+<template>
+  <div class="app-container">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="任务标题" prop="title">
+        <el-input
+          v-model="queryParams.title"
+          placeholder="请输入任务标题"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="任务状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择任务状态" clearable>
+          <el-option
+            v-for="dict in dict.type.report_status"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="创建时间">
+        <el-date-picker
+          v-model="dateRange"
+          style="width: 240px"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
+        <el-button
+          type="primary"
+          plain
+          icon="el-icon-plus"
+          size="mini"
+          @click="handleAdd"
+          v-hasPermi="['system:report:add']"
+        >新增</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="success"
+          icon="el-icon-magic-stick"
+          size="mini"
+          @click="handleWizard"
+          v-hasPermi="['system:report:add']"
+        >报告向导</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="success"
+          plain
+          icon="el-icon-edit"
+          size="mini"
+          :disabled="single"
+          @click="handleUpdate"
+          v-hasPermi="['system:report:edit']"
+        >修改</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="multiple"
+          @click="handleDelete"
+          v-hasPermi="['system:report:remove']"
+        >删除</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="warning"
+          plain
+          icon="el-icon-download"
+          size="mini"
+          @click="handleExport"
+          v-hasPermi="['system:report:export']"
+        >导出</el-button>
+      </el-col>
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+    </el-row>
+
+    <el-table v-loading="loading" :data="reportList" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="任务ID" align="center" prop="taskId" width="180" />
+      <el-table-column label="任务标题" align="center" prop="title" :show-overflow-tooltip="true" />
+      <el-table-column label="主题" align="center" prop="topic" :show-overflow-tooltip="true" />
+      <el-table-column label="状态" align="center" prop="status">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.report_status" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="当前步骤" align="center" prop="currentStep" />
+      <el-table-column label="进度" align="center" prop="progress">
+        <template slot-scope="scope">
+          <el-progress :percentage="scope.row.progress" :status="scope.row.status === 'failed' ? 'exception' : null"></el-progress>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+        <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-view"
+            @click="handleView(scope.row)"
+            v-hasPermi="['system:report:query']"
+          >查看</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-video-play"
+            @click="handleStart(scope.row)"
+            v-if="scope.row.status === 'pending'"
+            v-hasPermi="['system:report:start']"
+          >开始</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-edit"
+            @click="handleUpdate(scope.row)"
+            v-hasPermi="['system:report:edit']"
+          >修改</el-button>
+          <el-dropdown
+            size="mini"
+            @command="(command) => handleExport(scope.row, command)"
+            v-if="scope.row.status === 'completed'"
+            v-hasPermi="['system:report:export']"
+          >
+            <el-button size="mini" type="text" icon="el-icon-download">
+              导出<i class="el-icon-arrow-down el-icon--right"></i>
+            </el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="pdf">导出PDF</el-dropdown-item>
+              <el-dropdown-item command="docx">导出Word</el-dropdown-item>
+              <el-dropdown-item command="pdf-oss">导出PDF到OSS</el-dropdown-item>
+              <el-dropdown-item command="docx-oss">导出Word到OSS</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-delete"
+            @click="handleDelete(scope.row)"
+            v-hasPermi="['system:report:remove']"
+          >删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    
+    <pagination
+      v-show="total>0"
+      :total="total"
+      :page.sync="queryParams.pageNum"
+      :limit.sync="queryParams.pageSize"
+      @pagination="getList"
+    />
+
+    <!-- 添加或修改报告任务对话框 -->
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="任务标题" prop="title">
+          <el-input v-model="form.title" placeholder="请输入任务标题" />
+        </el-form-item>
+        <el-form-item label="任务描述" prop="description">
+          <el-input v-model="form.description" type="textarea" placeholder="请输入任务描述" />
+        </el-form-item>
+        <el-form-item label="报告主题" prop="topic">
+          <el-input v-model="form.topic" placeholder="请输入报告主题" />
+        </el-form-item>
+        <el-form-item label="配置参数" prop="configParams">
+          <el-input v-model="form.configParams" type="textarea" placeholder="请输入配置参数（JSON格式）" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 报告详情对话框 -->
+    <el-dialog title="报告详情" :visible.sync="detailOpen" width="80%" append-to-body>
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="基本信息" name="basic">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="任务ID">{{ detailForm.taskId }}</el-descriptions-item>
+            <el-descriptions-item label="任务标题">{{ detailForm.title }}</el-descriptions-item>
+            <el-descriptions-item label="报告主题">{{ detailForm.topic }}</el-descriptions-item>
+            <el-descriptions-item label="任务状态">
+              <dict-tag :options="dict.type.report_status" :value="detailForm.status"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="当前步骤">{{ detailForm.currentStep }}</el-descriptions-item>
+            <el-descriptions-item label="进度">
+              <el-progress :percentage="detailForm.progress" :status="detailForm.status === 'failed' ? 'exception' : null"></el-progress>
+            </el-descriptions-item>
+            <el-descriptions-item label="开始时间">{{ parseTime(detailForm.startTime) }}</el-descriptions-item>
+            <el-descriptions-item label="完成时间">{{ parseTime(detailForm.endTime) }}</el-descriptions-item>
+            <el-descriptions-item label="创建时间">{{ parseTime(detailForm.createTime) }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ parseTime(detailForm.updateTime) }}</el-descriptions-item>
+          </el-descriptions>
+          <el-divider content-position="left">任务描述</el-divider>
+          <p>{{ detailForm.description }}</p>
+          <el-divider content-position="left">错误信息</el-divider>
+          <p v-if="detailForm.errorMessage" style="color: red;">{{ detailForm.errorMessage }}</p>
+          <p v-else style="color: #909399;">无错误信息</p>
+        </el-tab-pane>
+        <el-tab-pane label="报告内容" name="content">
+          <div v-loading="contentLoading">
+            <SafeHtml  style="min-height: 300px;" :content="reportContent" />
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="执行日志" name="logs">
+          <div v-loading="statusLoading">
+            <el-timeline>
+              <el-timeline-item
+                v-for="(log, index) in executionLogs"
+                :key="index"
+                :timestamp="log.timestamp"
+                :type="log.type"
+              >
+                {{ log.message }}
+              </el-timeline-item>
+            </el-timeline>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="detailOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+ import SafeHtml from "@/components/Security/SafeHtml.vue"
+import { listReport, getReport, delReport, addReport, updateReport, startReport, getReportStatus, getReportContent, exportReport, downloadReportFile, exportReportList } from "@/api/system/report";
+
+export default {
+  name: "Report",
+  dicts: ['report_status'],
+  data() {
+    return {
+      // 遮罩层
+      loading: true,
+      // 选中数组
+      ids: [],
+      // 非单个禁用
+      single: true,
+      // 非多个禁用
+      multiple: true,
+      // 显示搜索条件
+      showSearch: true,
+      // 总条数
+      total: 0,
+      // 报告任务表格数据
+      reportList: [],
+      // 弹出层标题
+      title: "",
+      // 是否显示弹出层
+      open: false,
+      // 是否显示详情弹出层
+      detailOpen: false,
+      // 日期范围
+      dateRange: [],
+      // 查询参数
+      queryParams: {
+        pageNum: 1,
+        pageSize: 10,
+        title: null,
+        status: null,
+      },
+      // 表单参数
+      form: {},
+      // 详情表单参数
+      detailForm: {},
+      // 表单校验
+      rules: {
+        title: [
+          { required: true, message: "任务标题不能为空", trigger: "blur" }
+        ],
+        topic: [
+          { required: true, message: "报告主题不能为空", trigger: "blur" }
+        ]
+      },
+      // 活动标签页
+      activeTab: 'basic',
+      // 报告内容
+      reportContent: '',
+      // 内容加载状态
+      contentLoading: false,
+      // 状态加载
+      statusLoading: false,
+      // 执行日志
+      executionLogs: []
+    };
+  },
+  created() {
+    this.getList();
+  },
+  methods: {
+    /** 查询报告任务列表 */
+    getList() {
+      this.loading = true;
+      listReport(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+        this.reportList = response.rows;
+        this.total = response.total;
+        this.loading = false;
+      });
+    },
+    // 取消按钮
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+    // 表单重置
+    reset() {
+      this.form = {
+        taskId: null,
+        title: null,
+        description: null,
+        topic: null,
+        configParams: null
+      };
+      this.resetForm("form");
+    },
+    /** 搜索按钮操作 */
+    handleQuery() {
+      this.queryParams.pageNum = 1;
+      this.getList();
+    },
+    /** 重置按钮操作 */
+    resetQuery() {
+      this.dateRange = [];
+      this.resetForm("queryForm");
+      this.handleQuery();
+    },
+    // 多选框选中数据
+    handleSelectionChange(selection) {
+      this.ids = selection.map(item => item.taskId)
+      this.single = selection.length!==1
+      this.multiple = !selection.length
+    },
+    /** 新增按钮操作 */
+    handleAdd() {
+      this.reset();
+      this.open = true;
+      this.title = "添加报告任务";
+    },
+    /** 报告向导按钮操作 */
+    handleWizard() {
+      this.$router.push('/system/report/wizard');
+    },
+    /** 修改按钮操作 */
+    handleUpdate(row) {
+      this.reset();
+      const taskId = row.taskId || this.ids
+      getReport(taskId).then(response => {
+        this.form = response.data;
+        this.open = true;
+        this.title = "修改报告任务";
+      });
+    },
+    /** 查看按钮操作 */
+    handleView(row) {
+      this.detailForm = row;
+      this.detailOpen = true;
+      this.activeTab = 'basic';
+      this.loadReportContent(row.taskId);
+      this.loadExecutionLogs(row.taskId);
+    },
+    /** 开始生成报告 */
+    handleStart(row) {
+      this.$modal.confirm('是否确认开始生成报告任务编号为"' + row.taskId + '"的报告?').then(function() {
+        return startReport(row);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("报告生成已开始");
+      }).catch(() => {});
+    },
+    /** 提交按钮 */
+    submitForm() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          if (this.form.taskId != null) {
+            updateReport(this.form).then(response => {
+              this.$modal.msgSuccess("修改成功");
+              this.open = false;
+              this.getList();
+            });
+          } else {
+            addReport(this.form).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.open = false;
+              this.getList();
+            });
+          }
+        }
+      });
+    },
+    /** 删除按钮操作 */
+    handleDelete(row) {
+      const taskIds = row.taskId || this.ids;
+      this.$modal.confirm('是否确认删除报告任务编号为"' + taskIds + '"的数据项？').then(function() {
+        return delReport(taskIds);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
+    /** 导出按钮操作 */
+    handleExport(row, command) {
+      const format = command.includes('pdf') ? 'pdf' : 'docx';
+      const uploadToOss = command.includes('oss');
+      
+      this.$modal.loading("正在导出报告，请稍候...");
+      
+      this.exportReport(row.taskId, {
+        format: format,
+        uploadToOss: uploadToOss
+      }).then(response => {
+        this.$modal.closeLoading();
+        if (uploadToOss) {
+          this.$modal.msgSuccess("报告已导出到对象存储: " + response.data);
+        } else {
+          // 直接下载文件
+          const filename = `${row.title}_${row.taskId}.${format}`;
+          this.downloadReportFile(row.taskId, filename);
+          this.$modal.msgSuccess("报告导出成功");
+        }
+      }).catch(() => {
+        this.$modal.closeLoading();
+        this.$modal.msgError("导出失败");
+      });
+    },
+    /** 导出列表按钮操作 */
+     handleListExport() {
+       this.download('system/report/export', {
+         ...this.queryParams
+       }, `report_${new Date().getTime()}.xlsx`)
+     },
+     /** 下载报告文件 */
+     downloadReportFile(taskId, filename) {
+       downloadReportFile(taskId, filename).then(response => {
+         const blob = new Blob([response], { type: response.type });
+         const url = window.URL.createObjectURL(blob);
+         const link = document.createElement('a');
+         link.href = url;
+         link.download = filename;
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
+         window.URL.revokeObjectURL(url);
+       }).catch(() => {
+          this.$modal.msgError("下载失败");
+        });
+      },
+     /** 加载报告内容 */
+    loadReportContent(taskId) {
+      this.contentLoading = true;
+      getReportContent(taskId).then(response => {
+        this.reportContent = response.data.content || '暂无内容';
+        this.contentLoading = false;
+      }).catch(() => {
+        this.reportContent = '加载失败';
+        this.contentLoading = false;
+      });
+    },
+    /** 加载执行日志 */
+    loadExecutionLogs(taskId) {
+      this.statusLoading = true;
+      getReportStatus(taskId).then(response => {
+        // 模拟执行日志数据
+        this.executionLogs = [
+          { timestamp: '2024-01-01 10:00:00', type: 'primary', message: '任务创建成功' },
+          { timestamp: '2024-01-01 10:01:00', type: 'success', message: '开始执行Step1' },
+          { timestamp: '2024-01-01 10:05:00', type: 'success', message: 'Step1执行完成' },
+          { timestamp: '2024-01-01 10:06:00', type: 'warning', message: '开始执行Step2' }
+        ];
+        this.statusLoading = false;
+      }).catch(() => {
+        this.executionLogs = [];
+        this.statusLoading = false;
+      });
+    }
+  }
+};
+</script>

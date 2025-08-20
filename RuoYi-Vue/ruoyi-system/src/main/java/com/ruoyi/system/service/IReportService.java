@@ -187,4 +187,46 @@ public interface IReportService {
      * @return 历史版本列表
      */
     public Object getStepHistory(String taskId, String step) throws Exception;
+
+    // ==================== 发布和归档方法 ====================
+
+    /**
+     * 发布报告
+     * 
+     * @param taskId 任务ID
+     * @return 是否成功
+     */
+    public boolean publishReport(String taskId) throws Exception;
+
+    /**
+     * 归档报告
+     * 
+     * @param taskId 任务ID
+     * @return 是否成功
+     */
+    public boolean archiveReport(String taskId) throws Exception;
+
+    /**
+     * 批量归档报告
+     * 
+     * @param taskIds 任务ID列表
+     * @return 成功归档的数量
+     */
+    public int batchArchiveReports(String[] taskIds) throws Exception;
+
+    /**
+     * 取消发布报告（回到草稿状态）
+     * 
+     * @param taskId 任务ID
+     * @return 是否成功
+     */
+    public boolean unpublishReport(String taskId) throws Exception;
+
+    /**
+     * 从归档中恢复报告
+     * 
+     * @param taskId 任务ID
+     * @return 是否成功
+     */
+    public boolean restoreReport(String taskId) throws Exception;
 }

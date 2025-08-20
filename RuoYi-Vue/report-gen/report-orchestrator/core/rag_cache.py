@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import numpy as np
 from dataclasses import dataclass, asdict
 import logging
-from sentence_transformers import SentenceTransformer
 import faiss
 from .vectorstore import Embedding, FaissStore
 

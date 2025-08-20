@@ -9,11 +9,7 @@ from . import db
 class Orchestrator:
     def __init__(self):
         self.mcp = MCPClient(os.getenv("MCP_BASE", "http://localhost:8000"))
-        self.ds = DeepSeekClient(
-            os.getenv("DEEPSEEK_BASE", "https://api.deepseek.com"), 
-            os.getenv("DEEPSEEK_API_KEY", ""),
-            os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
-        )
+        self.ds = DeepSeekClient.from_env()
         backend = os.getenv("VECTOR_BACKEND", "faiss").lower()
         self.embed = Embedding()
         if backend == "pgvector":

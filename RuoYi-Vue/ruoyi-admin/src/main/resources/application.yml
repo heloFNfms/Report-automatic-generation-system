@@ -136,4 +136,26 @@ report:
     # 连接超时时间（毫秒）
     connectTimeout: 5000
     # 读取超时时间（毫秒）
+    readTimeout: 300000  # 5分钟，适应AI长时间处理
+  # OSS云存储配置
+  oss:
+    # 是否启用OSS上传
+    enabled: true
+    # OSS服务提供商 (aliyun/tencent/aws)
+    provider: aliyun
+    # 访问密钥ID
+    accessKeyId: ${OSS_ACCESS_KEY_ID:your-access-key-id}
+    # 访问密钥Secret
+    accessKeySecret: ${OSS_ACCESS_KEY_SECRET:your-access-key-secret}
+    # 存储桶名称
+    bucketName: ${OSS_BUCKET_NAME:report-storage}
+    # 服务端点
+    endpoint: ${OSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
+    # 文件访问域名
+    domain: ${OSS_DOMAIN:https://report-storage.oss-cn-hangzhou.aliyuncs.com}
+    # 文件存储路径前缀
+    pathPrefix: reports/
+    # 连接超时时间（毫秒）
+    connectTimeout: 10000
+    # 读取超时时间（毫秒）
     readTimeout: 30000

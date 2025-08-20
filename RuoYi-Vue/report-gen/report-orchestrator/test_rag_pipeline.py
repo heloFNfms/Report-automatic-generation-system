@@ -23,6 +23,7 @@ from core.rag_config import RAGConfig, get_config, ACADEMIC_CONFIG, QUICK_CONFIG
 from core.mcp_client import MCPClient
 from core.deepseek_client import DeepSeekClient
 from core.vectorstore import Embedding, FaissStore
+from core.vector_config import get_vector_manager
 
 # 配置日志
 logging.basicConfig(
@@ -46,12 +47,9 @@ class RAGPipelineTest:
         try:
             # 初始化组件
             self.mcp = MCPClient(base=os.getenv("MCP_BASE", "http://localhost:8000"))
-            self.deepseek = DeepSeekClient(
-                base=os.getenv('DEEPSEEK_BASE', 'https://api.deepseek.com'),
-                key=os.getenv('DEEPSEEK_API_KEY')
-            )
+            self.deepseek = DeepSeekClient.from_env()
             self.embedding = Embedding()
-            self.vector_store = FaissStore()
+            self.vector_manager = get_vector_manager()
             
             # 初始化RAG流水线
             config = get_config("academic")
@@ -59,7 +57,7 @@ class RAGPipelineTest:
                 mcp_client=self.mcp,
                 deepseek_client=self.deepseek,
                 embedding=self.embedding,
-                vector_store=self.vector_store,
+                vector_store=None,  # 使用新的向量管理器
                 config=config
             )
             
@@ -240,7 +238,7 @@ class RAGPipelineTest:
                 mcp_client=self.mcp,
                 deepseek_client=self.deepseek,
                 embedding=self.embedding,
-                vector_store=self.vector_store,
+                vector_store=None,  # 使用新的向量管理器
                 config=QUICK_CONFIG
             )
             

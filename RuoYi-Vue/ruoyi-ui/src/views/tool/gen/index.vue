@@ -160,7 +160,9 @@
           :key="key"
         >
           <el-link :underline="false" icon="el-icon-document-copy" v-clipboard:copy="value" v-clipboard:success="clipboardSuccess" style="float:right">复制</el-link>
-          <pre><code class="hljs" v-html="highlightedCode(value, key)"></code></pre>
+          <SafeHtml tag="pre" class="hljs-container">
+            <code class="hljs" v-text="value"></code>
+          </SafeHtml>
         </el-tab-pane>
       </el-tabs>
     </el-dialog>
@@ -173,18 +175,11 @@
 import { listTable, previewTable, delTable, genCode, synchDb } from "@/api/tool/gen"
 import importTable from "./importTable"
 import createTable from "./createTable"
-import hljs from "highlight.js/lib/highlight"
-import "highlight.js/styles/github-gist.css"
-hljs.registerLanguage("java", require("highlight.js/lib/languages/java"))
-hljs.registerLanguage("xml", require("highlight.js/lib/languages/xml"))
-hljs.registerLanguage("html", require("highlight.js/lib/languages/xml"))
-hljs.registerLanguage("vue", require("highlight.js/lib/languages/xml"))
-hljs.registerLanguage("javascript", require("highlight.js/lib/languages/javascript"))
-hljs.registerLanguage("sql", require("highlight.js/lib/languages/sql"))
+import SafeHtml from "@/components/Security/SafeHtml.vue"
 
 export default {
   name: "Gen",
-  components: { importTable, createTable },
+  components: { importTable, createTable, SafeHtml },
   data() {
     return {
       // 遮罩层
@@ -301,13 +296,7 @@ export default {
         this.preview.activeName = "domain.java"
       })
     },
-    /** 高亮显示 */
-    highlightedCode(code, key) {
-      const vmName = key.substring(key.lastIndexOf("/") + 1, key.indexOf(".vm"))
-      var language = vmName.substring(vmName.indexOf(".") + 1, vmName.length)
-      const result = hljs.highlight(language, code || "", true)
-      return result.value || '&nbsp;'
-    },
+
     /** 复制代码成功 */
     clipboardSuccess() {
       this.$modal.msgSuccess("复制成功")

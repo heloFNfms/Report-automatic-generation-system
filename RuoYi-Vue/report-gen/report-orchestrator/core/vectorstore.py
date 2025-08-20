@@ -1,15 +1,21 @@
 import os, json
 from typing import List, Dict, Tuple, Any
 import numpy as np
-from sentence_transformers import SentenceTransformer
 import hashlib
 from datetime import datetime
 import faiss
 
 class Embedding:
     def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2"):
-        self.model = SentenceTransformer(model_name)
+        self.model_name = model_name
+        self.model = None
+    
+    def _ensure_model_loaded(self):
+        if self.model is None:
+            from sentence_transformers import SentenceTransformer
+            self.model = SentenceTransformer(self.model_name)
     def encode(self, texts: List[str]) -> np.ndarray:
+        self._ensure_model_loaded()
         return self.model.encode(texts, convert_to_numpy=True)
 
 class FaissStore:

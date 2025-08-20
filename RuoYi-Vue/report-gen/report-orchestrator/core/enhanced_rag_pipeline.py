@@ -9,6 +9,7 @@ from .textops import (
     smart_chunk_by_strategy, budget_context, count_tokens
 )
 from .vectorstore import Embedding, FaissStore
+from .vector_config import get_vector_manager
 from .rag_config import RAGConfig
 from .rag_cache import RAGCache, get_rag_cache
 
@@ -18,12 +19,20 @@ class EnhancedRAGPipeline:
     """增强的RAG流水线实现"""
     
     def __init__(self, mcp_client: MCPClient, deepseek_client: DeepSeekClient, 
-                 embedding: Embedding, vector_store: FaissStore, config: RAGConfig = None):
+                 embedding: Embedding, vector_store=None, config: RAGConfig = None):
         self.mcp = mcp_client
         self.deepseek = deepseek_client
         self.embed = embedding
-        self.store = vector_store
         self.config = config or RAGConfig()
+        
+        # 使用新的向量存储管理器
+        if vector_store is None:
+            self.vector_manager = get_vector_manager()
+            self.store = None  # 延迟初始化
+        else:
+            # 向后兼容
+            self.store = vector_store
+            self.vector_manager = None
         
         # RAG缓存系统
         self.cache = get_rag_cache(
@@ -192,6 +201,11 @@ class EnhancedRAGPipeline:
     
     async def _vector_retrieval(self, queries: List[str], documents: List[Dict[str, Any]]) -> List[Tuple[str, Dict[str, Any]]]:
         """向量检索和存储"""
+        # 确保向量存储已初始化
+        if self.store is None and self.vector_manager:
+            await self.vector_manager.initialize()
+            self.store = self.vector_manager.get_store()
+        
         # 提取文本和元数据
         texts = flatten_snippets(documents)
         metas = []
@@ -202,15 +216,25 @@ class EnhancedRAGPipeline:
                 "title": doc.get("title") or doc.get("id"),
                 "source": doc.get("_source", "unknown"),
                 "query": doc.get("_query", ""),
-                "doc_index": i
+                "doc_index": i,
+                "text": texts[i] if i < len(texts) else ""  # 保存文本到元数据
             }
             metas.append(meta)
         
         # 存储到向量数据库
         if texts:
             try:
+                import numpy as np
                 embeddings = self.embed.encode(texts)
-                self.store.add(embeddings, texts, metas)
+                
+                # 适配新的向量存储接口
+                if hasattr(self.store, 'add_vectors'):
+                    # 新的抽象接口
+                    await self.store.add_vectors(np.array(embeddings), metas)
+                else:
+                    # 旧的FAISS接口
+                    self.store.add(embeddings, texts, metas)
+                
                 logger.info(f"Added {len(texts)} documents to vector store")
             except Exception as e:
                 logger.error(f"Failed to add documents to vector store: {e}")
@@ -220,8 +244,24 @@ class EnhancedRAGPipeline:
         for query in queries:
             try:
                 query_embedding = self.embed.encode([query])[0]
-                results = self.store.search(query_embedding, top_k=self.config.max_retrieved_docs)
-                retrieved_docs.extend(results)
+                
+                # 适配新的向量存储接口
+                if hasattr(self.store, 'search') and hasattr(self.store, 'add_vectors'):
+                     # 新的抽象接口
+                    results = await self.store.search(
+                         np.array(query_embedding), 
+                         k=self.config.max_retrieved_docs
+                    )
+                     # 转换结果格式 (id, distance, metadata) -> (text, metadata)
+                    for vec_id, distance, metadata in results:
+                         # 从元数据中恢复文本
+                         text = metadata.get('text', f"Document {vec_id}")
+                         retrieved_docs.append((text, metadata))
+                else:
+                     # 旧的FAISS接口
+                    results = self.store.search(query_embedding, top_k=self.config.max_retrieved_docs)
+                    retrieved_docs.extend(results)
+                    
             except Exception as e:
                 logger.warning(f"Vector search failed for query '{query[:50]}...': {e}")
         

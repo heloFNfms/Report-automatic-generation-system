@@ -1,22 +1,22 @@
 
 === E2E测试报告 ===
-测试时间: 2025-08-20 11:03:53
+测试时间: 2025-08-20 15:06:11
 测试服务: http://localhost:8001
 
 测试总数: 11
-成功数: 2
-失败数: 9
-成功率: 18.2%
+成功数: 7
+失败数: 4
+成功率: 63.6%
 
 详细结果:
 [✓] Health Check: 服务正常运行
-[✓] Step1 Topic Generation: 任务创建成功，ID: b637ed55-2f11-4496-a30a-2f8e5117b2f2
-[✗] Step2 Outline Generation: 请求失败: 400
-[✗] Step3 Research: 请求失败: 400
-[✗] Step4 Content Generation: 请求失败: 400
-[✗] Step5 Review Optimization: 请求失败: 400
-[✗] Export PDF: 导出失败: 500
-[✗] Export Word: 导出失败: 500
-[✗] Step History: 历史查询失败: 404
+[✓] Step1 Topic Generation: 任务创建成功，ID: ebfa10f2-fc66-459a-8c17-f75a72fd408d
+[✓] Step2 Outline Generation: 大纲生成成功
+[✓] Step3 Research: 资料搜集成功
+[✓] Step4 Content Generation: 内容生成成功
+[✓] Step5 Review Optimization: 审核优化成功
+[✗] Export PDF: PDF导出响应格式异常
+[✗] Export Word: Word导出响应格式异常
+[✓] Step History: 历史查询成功
 [✗] Step Rerun: 重跑请求失败: 422
 [✗] Rollback: 回滚请求失败: 422

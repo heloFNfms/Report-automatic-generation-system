@@ -7,7 +7,7 @@ create table report_task (
   title             varchar(200)    default ''                 comment '任务标题',
   description       varchar(500)    default ''                 comment '任务描述',
   topic             varchar(500)    not null                   comment '报告主题',
-  status            char(1)         default '0'                comment '任务状态（0待处理 1进行中 2已完成 3失败）',
+  status            varchar(20)     default '0'                comment '任务状态（0待处理 1进行中 2已完成 3失败 或step1_done等）',
   current_step      varchar(20)     default 'step1'            comment '当前步骤（step1-step5）',
   progress          int(3)          default 0                  comment '进度百分比',
   content           longtext                                   comment '报告内容（JSON格式）',

@@ -88,6 +88,17 @@
           v-hasPermi="['system:report:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="info"
+          plain
+          icon="el-icon-folder-add"
+          size="mini"
+          :disabled="multiple"
+          @click="handleBatchArchive"
+          v-hasPermi="['system:report:archive']"
+        >批量归档</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -99,6 +110,11 @@
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
           <dict-tag :options="dict.type.report_status" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="发布状态" align="center" prop="publishStatus" width="100">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.report_publish_status" :value="scope.row.publishStatus"/>
         </template>
       </el-table-column>
       <el-table-column label="当前步骤" align="center" prop="currentStep" />
@@ -155,6 +171,38 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-upload2"
+            @click="handlePublish(scope.row)"
+            v-if="scope.row.status === 'completed' && scope.row.publishStatus === 'draft'"
+            v-hasPermi="['system:report:publish']"
+          >发布</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-download"
+            @click="handleUnpublish(scope.row)"
+            v-if="scope.row.publishStatus === 'published'"
+            v-hasPermi="['system:report:publish']"
+          >取消发布</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-folder-add"
+            @click="handleArchive(scope.row)"
+            v-if="scope.row.publishStatus === 'published'"
+            v-hasPermi="['system:report:archive']"
+          >归档</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh-left"
+            @click="handleRestore(scope.row)"
+            v-if="scope.row.publishStatus === 'archived'"
+            v-hasPermi="['system:report:archive']"
+          >恢复</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
             v-hasPermi="['system:report:remove']"
@@ -204,6 +252,9 @@
             <el-descriptions-item label="任务状态">
               <dict-tag :options="dict.type.report_status" :value="detailForm.status"/>
             </el-descriptions-item>
+            <el-descriptions-item label="发布状态">
+              <dict-tag :options="dict.type.report_publish_status" :value="detailForm.publishStatus"/>
+            </el-descriptions-item>
             <el-descriptions-item label="当前步骤">{{ detailForm.currentStep }}</el-descriptions-item>
             <el-descriptions-item label="进度">
               <el-progress :percentage="detailForm.progress" :status="detailForm.status === 'failed' ? 'exception' : null"></el-progress>
@@ -212,6 +263,11 @@
             <el-descriptions-item label="完成时间">{{ parseTime(detailForm.endTime) }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ parseTime(detailForm.createTime) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ parseTime(detailForm.updateTime) }}</el-descriptions-item>
+            <el-descriptions-item label="发布时间">{{ parseTime(detailForm.publishTime) }}</el-descriptions-item>
+            <el-descriptions-item label="归档时间">{{ parseTime(detailForm.archiveTime) }}</el-descriptions-item>
+            <el-descriptions-item label="OSS文件路径" v-if="detailForm.ossFilePath">
+              <el-link :href="detailForm.ossFilePath" target="_blank" type="primary">{{ detailForm.ossFilePath }}</el-link>
+            </el-descriptions-item>
           </el-descriptions>
           <el-divider content-position="left">任务描述</el-divider>
           <p>{{ detailForm.description }}</p>
@@ -221,7 +277,7 @@
         </el-tab-pane>
         <el-tab-pane label="报告内容" name="content">
           <div v-loading="contentLoading">
-            <div v-html="reportContent" style="min-height: 300px;"></div>
+            <SafeHtml  style="min-height: 300px;" :content="reportContent" />
           </div>
         </el-tab-pane>
         <el-tab-pane label="执行日志" name="logs">
@@ -247,11 +303,15 @@
 </template>
 
 <script>
-import { listReport, getReport, delReport, addReport, updateReport, startReport, getReportStatus, getReportContent, exportReport, downloadReportFile, exportReportList } from "@/api/system/report";
+import SafeHtml from "@/components/Security/SafeHtml.vue"
+import { listReport, getReport, delReport, addReport, updateReport, startReport, getReportStatus, getReportContent, exportReport, downloadReportFile, exportReportList, publishReport, archiveReport, batchArchiveReports, unpublishReport, restoreReport } from "@/api/system/report";
 
 export default {
   name: "Report",
-  dicts: ['report_status'],
+  components: {
+    SafeHtml
+  },
+  dicts: ['report_status', 'report_publish_status'],
   data() {
     return {
       // 遮罩层
@@ -495,6 +555,52 @@ export default {
         this.executionLogs = [];
         this.statusLoading = false;
       });
+    },
+    /** 发布报告 */
+    handlePublish(row) {
+      this.$modal.confirm('是否确认发布报告任务编号为"' + row.taskId + '"的报告?').then(function() {
+        return publishReport(row.taskId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("报告发布成功");
+      }).catch(() => {});
+    },
+    /** 取消发布报告 */
+    handleUnpublish(row) {
+      this.$modal.confirm('是否确认取消发布报告任务编号为"' + row.taskId + '"的报告?').then(function() {
+        return unpublishReport(row.taskId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("取消发布成功");
+      }).catch(() => {});
+    },
+    /** 归档报告 */
+    handleArchive(row) {
+      this.$modal.confirm('是否确认归档报告任务编号为"' + row.taskId + '"的报告?').then(function() {
+        return archiveReport(row.taskId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("报告归档成功");
+      }).catch(() => {});
+    },
+    /** 恢复归档报告 */
+    handleRestore(row) {
+      this.$modal.confirm('是否确认恢复报告任务编号为"' + row.taskId + '"的报告?').then(function() {
+        return restoreReport(row.taskId);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("报告恢复成功");
+      }).catch(() => {});
+    },
+    /** 批量归档报告 */
+    handleBatchArchive() {
+      const taskIds = this.ids;
+      this.$modal.confirm('是否确认归档选中的 ' + taskIds.length + ' 个报告?').then(function() {
+        return batchArchiveReports(taskIds);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("批量归档成功");
+      }).catch(() => {});
     }
   }
 };

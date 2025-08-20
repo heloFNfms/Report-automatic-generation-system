@@ -9,6 +9,8 @@ from core.logger import logger, perf_logger
 from core.security import security_manager
 from core.export import export_manager
 from api.cache_api import cache_router
+from core.vector_config import get_vector_manager, initialize_vector_store
+import asyncio
 import time
 import uuid
 import os
@@ -87,6 +89,7 @@ async def log_and_security_middleware(request: Request, call_next):
                 pass  # 忽略释放错误
 
 orc = Orchestrator()
+vector_manager = None
 
 class Step1In(BaseModel):
     project_name: str
@@ -98,7 +101,17 @@ class TaskIn(BaseModel):
 
 @app.on_event("startup")
 async def on_startup():
-    await db.init_db()
+    global vector_manager
+    try:
+        # 初始化向量存储管理器
+        vector_manager = await initialize_vector_store()
+        logger.info("向量存储管理器初始化完成")
+        
+        # 初始化数据库
+        await db.init_db()
+        logger.info("数据库初始化完成")
+    except Exception as e:
+        logger.error(f"组件初始化失败: {e}")
 
 @app.get("/")
 async def root():
@@ -157,7 +170,7 @@ async def step2(body: TaskIn):
         result = await orc.step2_outline(body.task_id)
         perf_logger.end_timer("step2", success=True, task_id=body.task_id)
         logger.info(f"Step2 completed successfully for task {body.task_id}", task_id=body.task_id)
-        return result
+        return {"outline": result}
     except Exception as e:
         perf_logger.end_timer("step2", success=False, task_id=body.task_id, error=str(e))
         logger.error(f"Step2 failed for task {body.task_id}: {str(e)}", task_id=body.task_id, error=str(e))
@@ -169,9 +182,9 @@ async def step3(body: TaskIn):
     logger.info(f"Starting step3 for task {body.task_id}", task_id=body.task_id)
     try:
         result = await orc.step3_content(body.task_id)
-        perf_logger.end_timer("step3", success=True, task_id=body.task_id, sections_count=len(result.get('sections', [])))
-        logger.info(f"Step3 completed successfully for task {body.task_id}", task_id=body.task_id, sections_count=len(result.get('sections', [])))
-        return result
+        perf_logger.end_timer("step3", success=True, task_id=body.task_id, sections_count=len(result) if isinstance(result, dict) else 0)
+        logger.info(f"Step3 completed successfully for task {body.task_id}", task_id=body.task_id, sections_count=len(result) if isinstance(result, dict) else 0)
+        return {"research_results": result}
     except Exception as e:
         perf_logger.end_timer("step3", success=False, task_id=body.task_id, error=str(e))
         logger.error(f"Step3 failed for task {body.task_id}: {str(e)}", task_id=body.task_id, error=str(e))
@@ -185,7 +198,7 @@ async def step4(body: TaskIn):
         result = await orc.step4_report(body.task_id)
         perf_logger.end_timer("step4", success=True, task_id=body.task_id)
         logger.info(f"Step4 completed successfully for task {body.task_id}", task_id=body.task_id)
-        return result
+        return {"content": result}
     except Exception as e:
         perf_logger.end_timer("step4", success=False, task_id=body.task_id, error=str(e))
         logger.error(f"Step4 failed for task {body.task_id}: {str(e)}", task_id=body.task_id, error=str(e))
@@ -199,7 +212,7 @@ async def step5(body: TaskIn):
         result = await orc.step5_finalize(body.task_id)
         perf_logger.end_timer("step5", success=True, task_id=body.task_id)
         logger.info(f"Step5 completed successfully for task {body.task_id}", task_id=body.task_id)
-        return result
+        return {"final_report": result}
     except Exception as e:
         perf_logger.end_timer("step5", success=False, task_id=body.task_id, error=str(e))
         logger.error(f"Step5 failed for task {body.task_id}: {str(e)}", task_id=body.task_id, error=str(e))
@@ -218,7 +231,19 @@ class RerunStepIn(BaseModel):
 @app.get("/task/{task_id}/history/{step}")
 async def get_step_history(task_id: str, step: str):
     """获取某步骤的所有历史版本"""
-    history = await db.get_step_history(task_id, step)
+    # 步骤名称映射
+    step_mapping = {
+        "step1": "outline",
+        "step2": "outline", 
+        "step3": "content",
+        "step4": "report",
+        "step5": "final"
+    }
+    
+    # 如果是数字格式的步骤名，转换为内部名称
+    internal_step = step_mapping.get(step, step)
+    
+    history = await db.get_step_history(task_id, internal_step)
     if not history:
         raise HTTPException(404, "no history found")
     return {"task_id": task_id, "step": step, "history": history}
@@ -246,7 +271,19 @@ async def rollback_step(body: RerunStepIn):
     if not body.version:
         raise HTTPException(400, "version required")
     try:
-        success = await db.rollback_to_version(body.task_id, body.step, body.version)
+        # 步骤名称映射
+        step_mapping = {
+            "step1": "outline",
+            "step2": "outline", 
+            "step3": "content",
+            "step4": "report",
+            "step5": "final"
+        }
+        
+        # 如果是数字格式的步骤名，转换为内部名称
+        internal_step = step_mapping.get(body.step, body.step)
+        
+        success = await db.rollback_to_version(body.task_id, internal_step, body.version)
         if not success:
             raise HTTPException(404, "version not found")
         return {"message": f"rolled back to version {body.version}"}
@@ -359,3 +396,153 @@ async def cleanup_temp_files():
     except Exception as e:
         logger.error(f"Cleanup failed: {str(e)}")
         raise HTTPException(500, str(e))
+
+# 向量存储管理API
+@app.get("/api/vector/health")
+async def vector_health_check():
+    """向量存储健康检查"""
+    try:
+        global vector_manager
+        if vector_manager is None:
+            vector_manager = get_vector_manager()
+        
+        health_status = await vector_manager.health_check()
+        return health_status
+    except Exception as e:
+        logger.error(f"向量存储健康检查失败: {e}")
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+@app.get("/api/vector/stats")
+async def vector_stats():
+    """获取向量存储统计信息"""
+    try:
+        global vector_manager
+        if vector_manager is None:
+            vector_manager = get_vector_manager()
+        
+        stats = await vector_manager.get_stats()
+        return stats
+    except Exception as e:
+        logger.error(f"获取向量存储统计信息失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取统计信息失败: {str(e)}")
+
+@app.post("/api/vector/backup")
+async def backup_vectors(backup_path: str = "./backups"):
+    """备份向量数据"""
+    try:
+        global vector_manager
+        if vector_manager is None:
+            vector_manager = get_vector_manager()
+        
+        success = await vector_manager.backup(backup_path)
+        if success:
+            return {"message": f"向量数据备份完成，路径: {backup_path}"}
+        else:
+            raise HTTPException(status_code=500, detail="备份失败")
+    except Exception as e:
+        logger.error(f"向量数据备份失败: {e}")
+        raise HTTPException(status_code=500, detail=f"备份失败: {str(e)}")
+
+@app.delete("/api/vector/clear")
+async def clear_vectors():
+    """清空向量数据"""
+    try:
+        global vector_manager
+        if vector_manager is None:
+            vector_manager = get_vector_manager()
+        
+        store = vector_manager.get_store()
+        if hasattr(store, 'clear'):
+            if asyncio.iscoroutinefunction(store.clear):
+                success = await store.clear()
+            else:
+                success = store.clear()
+        else:
+            success = False
+        
+        if success:
+            return {"message": "向量数据清空完成"}
+        else:
+            raise HTTPException(status_code=500, detail="清空失败")
+    except Exception as e:
+        logger.error(f"清空向量数据失败: {e}")
+        raise HTTPException(status_code=500, detail=f"清空失败: {str(e)}")
+
+# ============================================================================
+# 兼容性路由 - 为平滑过渡提供向后兼容的API端点
+# 注意：这些路由将在未来版本中被移除，请使用新的POST接口
+# ============================================================================
+
+@app.get("/step4/{task_id}")
+async def step4_compat(task_id: str):
+    """兼容性路由：Step4 报告生成（GET方式）
+    
+    警告：此接口已废弃，请使用 POST /step4 接口
+    """
+    logger.warning(f"Using deprecated GET /step4/{task_id} endpoint. Please migrate to POST /step4")
+    
+    try:
+        perf_logger.start_timer("step4", task_id=task_id)
+        result = await orc.step4_report(task_id)
+        perf_logger.end_timer("step4", success=True, task_id=task_id)
+        logger.info(f"Step4 completed successfully for task {task_id} (compat)", task_id=task_id)
+        return {"report": result}
+    except Exception as e:
+        perf_logger.end_timer("step4", success=False, task_id=task_id, error=str(e))
+        logger.error(f"Step4 failed for task {task_id} (compat): {str(e)}", task_id=task_id, error=str(e))
+        raise HTTPException(400, str(e))
+
+@app.get("/step5/{task_id}")
+async def step5_compat(task_id: str):
+    """兼容性路由：Step5 最终报告（GET方式）
+    
+    警告：此接口已废弃，请使用 POST /step5 接口
+    """
+    logger.warning(f"Using deprecated GET /step5/{task_id} endpoint. Please migrate to POST /step5")
+    
+    try:
+        perf_logger.start_timer("step5", task_id=task_id)
+        result = await orc.step5_finalize(task_id)
+        perf_logger.end_timer("step5", success=True, task_id=task_id)
+        logger.info(f"Step5 completed successfully for task {task_id} (compat)", task_id=task_id)
+        return {"final_report": result}
+    except Exception as e:
+        perf_logger.end_timer("step5", success=False, task_id=task_id, error=str(e))
+        logger.error(f"Step5 failed for task {task_id} (compat): {str(e)}", task_id=task_id, error=str(e))
+        raise HTTPException(400, str(e))
+
+@app.get("/api/compatibility/info")
+async def compatibility_info():
+    """获取兼容性API信息"""
+    return {
+        "deprecated_endpoints": [
+            {
+                "endpoint": "GET /step4/{task_id}",
+                "replacement": "POST /step4",
+                "deprecation_date": "2024-01-01",
+                "removal_date": "2024-06-01",
+                "status": "deprecated"
+            },
+            {
+                "endpoint": "GET /step5/{task_id}",
+                "replacement": "POST /step5",
+                "deprecation_date": "2024-01-01",
+                "removal_date": "2024-06-01",
+                "status": "deprecated"
+            }
+        ],
+        "migration_guide": {
+            "step4": {
+                "old": "GET /step4/{task_id}",
+                "new": "POST /step4 with body: {\"task_id\": \"...\"}" 
+            },
+            "step5": {
+                "old": "GET /step5/{task_id}",
+                "new": "POST /step5 with body: {\"task_id\": \"...\"}"
+            }
+        },
+        "notice": "兼容性端点将在2024年6月1日后移除，请尽快迁移到新的POST接口"
+    }

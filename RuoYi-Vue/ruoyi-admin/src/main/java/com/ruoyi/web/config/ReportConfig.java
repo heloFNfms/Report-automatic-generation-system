@@ -14,16 +14,16 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 @Configuration
 @ConfigurationProperties(prefix = "report.orchestrator")
 public class ReportConfig {
-    
+
     /** 编排器服务地址 */
     private String url = "http://localhost:9000";
-    
+
     /** 连接超时时间（毫秒） */
     private int connectTimeout = 5000;
-    
+
     /** 读取超时时间（毫秒） */
-    private int readTimeout = 30000;
-    
+    private int readTimeout = 300000; // 5分钟，适应AI长时间处理
+
     /**
      * 创建用于调用报告编排器的RestTemplate
      */
@@ -32,31 +32,31 @@ public class ReportConfig {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(connectTimeout);
         factory.setReadTimeout(readTimeout);
-        
+
         RestTemplate restTemplate = new RestTemplate(factory);
         return restTemplate;
     }
-    
+
     public String getUrl() {
         return url;
     }
-    
+
     public void setUrl(String url) {
         this.url = url;
     }
-    
+
     public int getConnectTimeout() {
         return connectTimeout;
     }
-    
+
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
     }
-    
+
     public int getReadTimeout() {
         return readTimeout;
     }
-    
+
     public void setReadTimeout(int readTimeout) {
         this.readTimeout = readTimeout;
     }

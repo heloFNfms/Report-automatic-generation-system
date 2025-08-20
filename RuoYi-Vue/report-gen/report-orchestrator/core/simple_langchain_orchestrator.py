@@ -14,6 +14,7 @@ from .mcp_client import MCPClient
 from .deepseek_client import DeepSeekClient
 from .textops import flatten_snippets, chunk_texts, rerank_texts, budget_context, smart_sentence_split, deduplicate_citations, smart_chunk_by_strategy
 from .vectorstore import Embedding, FaissStore, PGVectorStore
+from .vector_config import get_vector_manager
 from .enhanced_rag_pipeline import EnhancedRAGPipeline
 from .rag_config import RAGConfig, get_config
 from . import db
@@ -25,27 +26,19 @@ class SimpleLangChainOrchestrator:
     def __init__(self, rag_config: RAGConfig = None):
         # 初始化基础组件
         self.mcp = MCPClient(os.getenv("MCP_BASE", "http://localhost:8000"))
-        self.ds = DeepSeekClient(
-            os.getenv("DEEPSEEK_BASE", "https://api.deepseek.com"), 
-            os.getenv("DEEPSEEK_API_KEY", ""),
-            os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
-        )
+        self.ds = DeepSeekClient.from_env()
         
         # 初始化向量存储
-        backend = os.getenv("VECTOR_BACKEND", "faiss").lower()
         self.embed = Embedding()
-        if backend == "pgvector":
-            self.store = PGVectorStore(os.getenv("PG_DSN", ""))
-        else:
-            self.store = FaissStore()
-            self.store.load()  # 载入持久化
+        self.vector_manager = get_vector_manager()
+        self.store = None  # 延迟初始化
         
         # 初始化增强RAG流水线
         self.rag_pipeline = EnhancedRAGPipeline(
             mcp_client=self.mcp,
             deepseek_client=self.ds,
             embedding=self.embed,
-            vector_store=self.store,
+            vector_store=None,  # 使用新的向量管理器
             config=rag_config or RAGConfig()
         )
     

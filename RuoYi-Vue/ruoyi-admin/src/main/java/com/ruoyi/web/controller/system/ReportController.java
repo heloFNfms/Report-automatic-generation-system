@@ -21,6 +21,13 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.ReportTask;
 import com.ruoyi.system.service.IReportService;
+import com.ruoyi.system.validation.ValidStep;
+import com.ruoyi.system.validation.ValidTaskId;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Min;
 
 /**
  * 报告生成Controller
@@ -143,7 +150,7 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:generate')")
     @Log(title = "重新执行报告步骤", businessType = BusinessType.OTHER)
     @PostMapping("/rerun/{taskId}/{step}")
-    public AjaxResult rerunStep(@PathVariable String taskId, @PathVariable String step) {
+    public AjaxResult rerunStep(@ValidTaskId @PathVariable String taskId, @ValidStep @PathVariable String step) {
         try {
             reportService.rerunReportStep(taskId, step);
             return success("步骤重新执行已启动");
@@ -158,8 +165,8 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:generate')")
     @Log(title = "回滚报告版本", businessType = BusinessType.OTHER)
     @PostMapping("/rollback/{taskId}/{step}/{version}")
-    public AjaxResult rollbackStep(@PathVariable String taskId, @PathVariable String step,
-            @PathVariable Integer version) {
+    public AjaxResult rollbackStep(@ValidTaskId @PathVariable String taskId, @ValidStep @PathVariable String step,
+            @Min(value = 1, message = "版本号必须大于0") @PathVariable Integer version) {
         try {
             reportService.rollbackReportStep(taskId, step, version);
             return success("报告版本回滚成功");
@@ -174,7 +181,8 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:export')")
     @Log(title = "导出报告", businessType = BusinessType.EXPORT)
     @PostMapping("/export/{taskId}")
-    public AjaxResult exportReport(@PathVariable String taskId, @RequestBody ExportRequest exportRequest) {
+    public AjaxResult exportReport(@ValidTaskId @PathVariable String taskId,
+            @Valid @RequestBody ExportRequest exportRequest) {
         try {
             String downloadUrl = reportService.exportReport(taskId, exportRequest.getFormat(),
                     exportRequest.isUploadToOss());
@@ -222,7 +230,7 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:generate')")
     @Log(title = "执行报告步骤1", businessType = BusinessType.OTHER)
     @PostMapping("/step1")
-    public AjaxResult executeStep1(@RequestBody ReportTask reportTask) {
+    public AjaxResult executeStep1(@Valid @RequestBody ReportTask reportTask) {
         try {
             String taskId = reportService.executeStep1(reportTask);
             return AjaxResult.success("步骤1执行成功", taskId);
@@ -237,7 +245,7 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:generate')")
     @Log(title = "执行报告步骤2", businessType = BusinessType.OTHER)
     @PostMapping("/step2/{taskId}")
-    public AjaxResult executeStep2(@PathVariable String taskId) {
+    public AjaxResult executeStep2(@ValidTaskId @PathVariable String taskId) {
         try {
             Object result = reportService.executeStep2(taskId);
             return AjaxResult.success("步骤2执行成功", result);
@@ -252,7 +260,7 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:generate')")
     @Log(title = "执行报告步骤3", businessType = BusinessType.OTHER)
     @PostMapping("/step3/{taskId}")
-    public AjaxResult executeStep3(@PathVariable String taskId) {
+    public AjaxResult executeStep3(@ValidTaskId @PathVariable String taskId) {
         try {
             Object result = reportService.executeStep3(taskId);
             return AjaxResult.success("步骤3执行成功", result);
@@ -267,7 +275,7 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:generate')")
     @Log(title = "执行报告步骤4", businessType = BusinessType.OTHER)
     @PostMapping("/step4/{taskId}")
-    public AjaxResult executeStep4(@PathVariable String taskId) {
+    public AjaxResult executeStep4(@ValidTaskId @PathVariable String taskId) {
         try {
             Object result = reportService.executeStep4(taskId);
             return AjaxResult.success("步骤4执行成功", result);
@@ -282,7 +290,7 @@ public class ReportController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:report:generate')")
     @Log(title = "执行报告步骤5", businessType = BusinessType.OTHER)
     @PostMapping("/step5/{taskId}")
-    public AjaxResult executeStep5(@PathVariable String taskId) {
+    public AjaxResult executeStep5(@ValidTaskId @PathVariable String taskId) {
         try {
             Object result = reportService.executeStep5(taskId);
             return AjaxResult.success("步骤5执行成功", result);
@@ -296,7 +304,7 @@ public class ReportController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('system:report:query')")
     @GetMapping("/step/{taskId}/{step}")
-    public AjaxResult getStepResult(@PathVariable String taskId, @PathVariable String step) {
+    public AjaxResult getStepResult(@ValidTaskId @PathVariable String taskId, @ValidStep @PathVariable String step) {
         try {
             Object result = reportService.getStepResult(taskId, step);
             return AjaxResult.success("获取步骤结果成功", result);
@@ -316,6 +324,83 @@ public class ReportController extends BaseController {
             return AjaxResult.success("获取步骤历史成功", result);
         } catch (Exception e) {
             return error("获取步骤历史失败: " + e.getMessage());
+        }
+    }
+
+    // ==================== 报告发布和归档功能接口 ====================
+
+    /**
+     * 发布报告
+     */
+    @PreAuthorize("@ss.hasPermi('system:report:publish')")
+    @Log(title = "发布报告", businessType = BusinessType.UPDATE)
+    @PostMapping("/publish/{taskId}")
+    public AjaxResult publishReport(@ValidTaskId @PathVariable String taskId) {
+        try {
+            boolean result = reportService.publishReport(taskId);
+            return result ? success("报告发布成功") : error("报告发布失败");
+        } catch (Exception e) {
+            return error("发布报告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 归档报告
+     */
+    @PreAuthorize("@ss.hasPermi('system:report:archive')")
+    @Log(title = "归档报告", businessType = BusinessType.UPDATE)
+    @PostMapping("/archive/{taskId}")
+    public AjaxResult archiveReport(@ValidTaskId @PathVariable String taskId) {
+        try {
+            boolean result = reportService.archiveReport(taskId);
+            return result ? success("报告归档成功") : error("报告归档失败");
+        } catch (Exception e) {
+            return error("归档报告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量归档报告
+     */
+    @PreAuthorize("@ss.hasPermi('system:report:archive')")
+    @Log(title = "批量归档报告", businessType = BusinessType.UPDATE)
+    @PostMapping("/archive/batch")
+    public AjaxResult batchArchiveReports(@RequestBody String[] taskIds) {
+        try {
+            int successCount = reportService.batchArchiveReports(taskIds);
+            return success("成功归档 " + successCount + " 个报告");
+        } catch (Exception e) {
+            return error("批量归档报告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 取消发布报告
+     */
+    @PreAuthorize("@ss.hasPermi('system:report:publish')")
+    @Log(title = "取消发布报告", businessType = BusinessType.UPDATE)
+    @PostMapping("/unpublish/{taskId}")
+    public AjaxResult unpublishReport(@ValidTaskId @PathVariable String taskId) {
+        try {
+            boolean result = reportService.unpublishReport(taskId);
+            return result ? success("取消发布成功") : error("取消发布失败");
+        } catch (Exception e) {
+            return error("取消发布报告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 恢复归档报告
+     */
+    @PreAuthorize("@ss.hasPermi('system:report:archive')")
+    @Log(title = "恢复归档报告", businessType = BusinessType.UPDATE)
+    @PostMapping("/restore/{taskId}")
+    public AjaxResult restoreReport(@ValidTaskId @PathVariable String taskId) {
+        try {
+            boolean result = reportService.restoreReport(taskId);
+            return result ? success("恢复报告成功") : error("恢复报告失败");
+        } catch (Exception e) {
+            return error("恢复报告失败: " + e.getMessage());
         }
     }
 }

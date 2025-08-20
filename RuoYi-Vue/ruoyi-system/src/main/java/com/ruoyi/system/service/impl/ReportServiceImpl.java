@@ -21,6 +21,9 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.ReportTask;
 import com.ruoyi.system.mapper.ReportTaskMapper;
 import com.ruoyi.system.service.IReportService;
+import com.ruoyi.system.service.IOssService;
+import com.ruoyi.system.exception.OrchestratorException;
+import com.ruoyi.system.constants.OrchestratorErrorCode;
 
 /**
  * 报告生成Service业务层处理
@@ -42,6 +45,9 @@ public class ReportServiceImpl implements IReportService {
 
     @Value("${report.orchestrator.url:http://localhost:9000}")
     private String orchestratorUrl;
+
+    @Autowired
+    private IOssService ossService;
 
     /**
      * 查询报告任务
@@ -165,7 +171,7 @@ public class ReportServiceImpl implements IReportService {
             }
         } catch (Exception e) {
             // 更新任务状态为失败
-            reportTask.setStatus("3");
+            reportTask.setStatus("3"); // 3失败
             reportTask.setErrorMessage(e.getMessage());
             reportTaskMapper.updateReportTask(reportTask);
             throw e;
@@ -187,7 +193,7 @@ public class ReportServiceImpl implements IReportService {
                 // 更新任务状态为完成
                 ReportTask task = new ReportTask();
                 task.setTaskId(taskId);
-                task.setStatus("2"); // 已完成
+                task.setStatus("2"); // 2已完成
                 task.setProgress(100);
                 task.setEndTime(new Date());
                 task.setUpdateTime(DateUtils.getNowDate());
@@ -197,7 +203,7 @@ public class ReportServiceImpl implements IReportService {
                 // 更新任务状态为失败
                 ReportTask task = new ReportTask();
                 task.setTaskId(taskId);
-                task.setStatus("3"); // 失败
+                task.setStatus("3"); // 3失败
                 task.setErrorMessage(e.getMessage());
                 task.setUpdateTime(DateUtils.getNowDate());
                 reportTaskMapper.updateReportTask(task);
@@ -223,7 +229,10 @@ public class ReportServiceImpl implements IReportService {
                 String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new Exception("执行" + step + "失败: " + response.getBody());
+            throw OrchestratorException.fromHttpError(
+                    response.getStatusCodeValue(),
+                    response.getBody(),
+                    "执行" + step);
         }
 
         // 更新当前步骤和进度
@@ -290,7 +299,7 @@ public class ReportServiceImpl implements IReportService {
     public Map<String, Object> getReportContent(String taskId) throws Exception {
         // 调用Python编排器获取报告内容
         ResponseEntity<String> response = restTemplate.getForEntity(
-                orchestratorUrl + "/tasks/" + taskId,
+                orchestratorUrl + "/task/" + taskId,
                 String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -323,7 +332,10 @@ public class ReportServiceImpl implements IReportService {
                 String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new Exception("重新执行步骤失败: " + response.getBody());
+            throw OrchestratorException.fromHttpError(
+                    response.getStatusCodeValue(),
+                    response.getBody(),
+                    "重新执行步骤" + step);
         }
     }
 
@@ -352,13 +364,17 @@ public class ReportServiceImpl implements IReportService {
                 String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new Exception("回滚报告版本失败: " + response.getBody());
+            throw OrchestratorException.fromHttpError(
+                    response.getStatusCodeValue(),
+                    response.getBody(),
+                    "回滚步骤" + step + "到版本" + version);
         }
     }
 
     @Override
     public String exportReport(String taskId, String format, boolean uploadToOss) throws Exception {
         Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("task_id", taskId);
         requestBody.put("format", format);
         requestBody.put("upload_to_oss", uploadToOss);
 
@@ -367,13 +383,23 @@ public class ReportServiceImpl implements IReportService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<Map> response = restTemplate.exchange(
-                orchestratorUrl + "/export/" + taskId,
+                orchestratorUrl + "/export",
                 HttpMethod.POST,
                 entity,
                 Map.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new Exception("导出失败: " + response.getBody());
+            String errorMessage = "导出" + format.toUpperCase() + "格式报告失败";
+            if (response.getBody() != null) {
+                Map<String, Object> errorBody = response.getBody();
+                if (errorBody.containsKey("error")) {
+                    errorMessage = errorBody.get("error").toString();
+                }
+            }
+            throw OrchestratorException.fromHttpError(
+                    response.getStatusCodeValue(),
+                    errorMessage,
+                    "导出" + format.toUpperCase() + "格式报告");
         }
 
         Map<String, Object> result = response.getBody();
@@ -391,12 +417,15 @@ public class ReportServiceImpl implements IReportService {
                     byte[].class);
 
             if (!fileResponse.getStatusCode().is2xxSuccessful()) {
-                throw new Exception("下载文件失败");
+                throw OrchestratorException.fromHttpError(
+                        fileResponse.getStatusCodeValue(),
+                        "下载失败",
+                        "下载报告文件");
             }
 
             byte[] fileData = fileResponse.getBody();
             if (fileData == null) {
-                throw new Exception("文件数据为空");
+                throw new OrchestratorException("文件数据为空，请重新生成报告", OrchestratorErrorCode.FILE_EMPTY);
             }
 
             // 设置响应头
@@ -418,10 +447,17 @@ public class ReportServiceImpl implements IReportService {
     @Override
     public boolean cleanupFiles(String taskId) throws Exception {
         try {
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("task_id", taskId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
             ResponseEntity<Map> response = restTemplate.exchange(
-                    orchestratorUrl + "/cleanup/" + taskId,
-                    HttpMethod.DELETE,
-                    null,
+                    orchestratorUrl + "/cleanup",
+                    HttpMethod.POST,
+                    entity,
                     Map.class);
 
             if (!response.getStatusCode().is2xxSuccessful()) {
@@ -446,7 +482,7 @@ public class ReportServiceImpl implements IReportService {
         // 生成任务ID
         String taskId = UUID.randomUUID().toString();
         reportTask.setTaskId(taskId);
-        reportTask.setStatus("step1");
+        reportTask.setStatus("1"); // 1进行中
         reportTask.setProgress(20);
         reportTask.setCreateTime(DateUtils.getNowDate());
         reportTask.setCreateBy(SecurityUtils.getUsername());
@@ -501,16 +537,25 @@ public class ReportServiceImpl implements IReportService {
         // 更新任务状态
         ReportTask task = selectReportTaskByTaskId(taskId);
         if (task != null) {
-            task.setStatus("step2");
+            task.setStatus("1"); // 1进行中
             task.setProgress(40);
             updateReportTask(task);
         }
 
+        // 构建请求体
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("task_id", taskId);
+
+        // 设置请求头
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
         // 调用编排器的step2接口
         ResponseEntity<String> response = restTemplate.exchange(
-                orchestratorUrl + "/step2/" + taskId,
+                orchestratorUrl + "/step2",
                 HttpMethod.POST,
-                null,
+                requestEntity,
                 String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -528,16 +573,25 @@ public class ReportServiceImpl implements IReportService {
         // 更新任务状态
         ReportTask task = selectReportTaskByTaskId(taskId);
         if (task != null) {
-            task.setStatus("step3");
+            task.setStatus("1"); // 1进行中
             task.setProgress(60);
             updateReportTask(task);
         }
 
+        // 构建请求体
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("task_id", taskId);
+
+        // 设置请求头
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
         // 调用编排器的step3接口
         ResponseEntity<String> response = restTemplate.exchange(
-                orchestratorUrl + "/step3/" + taskId,
+                orchestratorUrl + "/step3",
                 HttpMethod.POST,
-                null,
+                requestEntity,
                 String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -555,16 +609,25 @@ public class ReportServiceImpl implements IReportService {
         // 更新任务状态
         ReportTask task = selectReportTaskByTaskId(taskId);
         if (task != null) {
-            task.setStatus("step4");
+            task.setStatus("1"); // 1进行中
             task.setProgress(80);
             updateReportTask(task);
         }
 
+        // 构建请求体
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("task_id", taskId);
+
+        // 设置请求头
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
         // 调用编排器的step4接口
         ResponseEntity<String> response = restTemplate.exchange(
-                orchestratorUrl + "/step4/" + taskId,
+                orchestratorUrl + "/step4",
                 HttpMethod.POST,
-                null,
+                requestEntity,
                 String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -582,16 +645,25 @@ public class ReportServiceImpl implements IReportService {
         // 更新任务状态
         ReportTask task = selectReportTaskByTaskId(taskId);
         if (task != null) {
-            task.setStatus("completed");
+            task.setStatus("2"); // 2已完成
             task.setProgress(100);
             updateReportTask(task);
         }
 
+        // 构建请求体
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("task_id", taskId);
+
+        // 设置请求头
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
         // 调用编排器的step5接口
         ResponseEntity<String> response = restTemplate.exchange(
-                orchestratorUrl + "/step5/" + taskId,
+                orchestratorUrl + "/step5",
                 HttpMethod.POST,
-                null,
+                requestEntity,
                 String.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -607,7 +679,7 @@ public class ReportServiceImpl implements IReportService {
     @Override
     public Object getStepResult(String taskId, String step) throws Exception {
         ResponseEntity<String> response = restTemplate.exchange(
-                orchestratorUrl + "/step-result/" + taskId + "/" + step,
+                orchestratorUrl + "/task/" + taskId,
                 HttpMethod.GET,
                 null,
                 String.class);
@@ -625,7 +697,7 @@ public class ReportServiceImpl implements IReportService {
     @Override
     public Object getStepHistory(String taskId, String step) throws Exception {
         ResponseEntity<String> response = restTemplate.exchange(
-                orchestratorUrl + "/step-history/" + taskId + "/" + step,
+                orchestratorUrl + "/task/" + taskId + "/history/" + step,
                 HttpMethod.GET,
                 null,
                 String.class);
@@ -634,6 +706,175 @@ public class ReportServiceImpl implements IReportService {
             return objectMapper.readValue(response.getBody(), Object.class);
         } else {
             throw new Exception("获取步骤历史失败: " + response.getBody());
+        }
+    }
+
+    // ==================== 报告发布和归档功能实现 ====================
+
+    /**
+     * 发布报告
+     */
+    @Override
+    public boolean publishReport(String taskId) throws Exception {
+        ReportTask task = selectReportTaskByTaskId(taskId);
+        if (task == null) {
+            throw new Exception("报告任务不存在");
+        }
+
+        if (!"2".equals(task.getStatus())) {
+            throw new Exception("只有已完成的报告才能发布");
+        }
+
+        if ("1".equals(task.getPublishStatus())) {
+            throw new Exception("报告已经发布");
+        }
+
+        try {
+            // 导出报告为PDF格式
+            String downloadUrl = exportReport(taskId, "pdf", false);
+
+            // 从下载URL获取文件流并上传到OSS
+            String fileName = "report_" + taskId + ".pdf";
+            String ossPath = "reports/" + DateUtils.dateTimeNow("yyyy/MM/dd") + "/" + fileName;
+
+            // 通过RestTemplate下载文件并获取输入流
+            ResponseEntity<byte[]> fileResponse = restTemplate.getForEntity(downloadUrl, byte[].class);
+            if (!fileResponse.getStatusCode().is2xxSuccessful() || fileResponse.getBody() == null) {
+                throw new Exception("下载报告文件失败");
+            }
+
+            // 将字节数组转换为输入流并上传到OSS
+            try (java.io.ByteArrayInputStream inputStream = new java.io.ByteArrayInputStream(fileResponse.getBody())) {
+                String ossUrl = ossService.uploadFile(inputStream, ossPath, "application/pdf", true);
+                if (ossUrl == null) {
+                    throw new Exception("上传文件到OSS失败");
+                }
+            }
+
+            // 更新数据库
+            ReportTask updateTask = new ReportTask();
+            updateTask.setTaskId(taskId);
+            updateTask.setPublishStatus("1"); // 已发布
+            updateTask.setOssFilePath(ossPath);
+            updateTask.setPublishTime(DateUtils.getNowDate());
+            updateTask.setUpdateTime(DateUtils.getNowDate());
+
+            return updateReportTask(updateTask) > 0;
+        } catch (Exception e) {
+            throw new Exception("发布报告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 归档报告
+     */
+    @Override
+    public boolean archiveReport(String taskId) throws Exception {
+        ReportTask task = selectReportTaskByTaskId(taskId);
+        if (task == null) {
+            throw new Exception("报告任务不存在");
+        }
+
+        if (!"1".equals(task.getPublishStatus())) {
+            throw new Exception("只有已发布的报告才能归档");
+        }
+
+        if ("2".equals(task.getPublishStatus())) {
+            throw new Exception("报告已经归档");
+        }
+
+        try {
+            // 更新数据库
+            ReportTask updateTask = new ReportTask();
+            updateTask.setTaskId(taskId);
+            updateTask.setPublishStatus("2"); // 已归档
+            updateTask.setArchiveTime(DateUtils.getNowDate());
+            updateTask.setUpdateTime(DateUtils.getNowDate());
+
+            return updateReportTask(updateTask) > 0;
+        } catch (Exception e) {
+            throw new Exception("归档报告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量归档报告
+     */
+    @Override
+    public int batchArchiveReports(String[] taskIds) throws Exception {
+        int successCount = 0;
+        for (String taskId : taskIds) {
+            try {
+                if (archiveReport(taskId)) {
+                    successCount++;
+                }
+            } catch (Exception e) {
+                // 记录错误但继续处理其他报告
+                System.err.println("归档报告 " + taskId + " 失败: " + e.getMessage());
+            }
+        }
+        return successCount;
+    }
+
+    /**
+     * 取消发布报告
+     */
+    @Override
+    public boolean unpublishReport(String taskId) throws Exception {
+        ReportTask task = selectReportTaskByTaskId(taskId);
+        if (task == null) {
+            throw new Exception("报告任务不存在");
+        }
+
+        if (!"1".equals(task.getPublishStatus())) {
+            throw new Exception("只有已发布的报告才能取消发布");
+        }
+
+        try {
+            // 删除OSS文件
+            if (task.getOssFilePath() != null && !task.getOssFilePath().isEmpty()) {
+                ossService.deleteFile(task.getOssFilePath());
+            }
+
+            // 更新数据库
+            ReportTask updateTask = new ReportTask();
+            updateTask.setTaskId(taskId);
+            updateTask.setPublishStatus("0"); // 草稿
+            updateTask.setOssFilePath(null);
+            updateTask.setPublishTime(null);
+            updateTask.setUpdateTime(DateUtils.getNowDate());
+
+            return updateReportTask(updateTask) > 0;
+        } catch (Exception e) {
+            throw new Exception("取消发布报告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 恢复归档报告
+     */
+    @Override
+    public boolean restoreReport(String taskId) throws Exception {
+        ReportTask task = selectReportTaskByTaskId(taskId);
+        if (task == null) {
+            throw new Exception("报告任务不存在");
+        }
+
+        if (!"2".equals(task.getPublishStatus())) {
+            throw new Exception("只有已归档的报告才能恢复");
+        }
+
+        try {
+            // 更新数据库
+            ReportTask updateTask = new ReportTask();
+            updateTask.setTaskId(taskId);
+            updateTask.setPublishStatus("1"); // 已发布
+            updateTask.setArchiveTime(null);
+            updateTask.setUpdateTime(DateUtils.getNowDate());
+
+            return updateReportTask(updateTask) > 0;
+        } catch (Exception e) {
+            throw new Exception("恢复报告失败: " + e.getMessage());
         }
     }
 }
