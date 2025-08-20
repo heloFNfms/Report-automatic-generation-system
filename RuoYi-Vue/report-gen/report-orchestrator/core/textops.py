@@ -151,7 +151,7 @@ def deduplicate_citations(texts: List[str], similarity_threshold: float = 0.8) -
     def text_hash(text: str) -> str:
         """计算文本哈希"""
         # 标准化文本：去除空白、标点，转小写
-        normalized = re.sub(r'[\s\p{P}]+', '', text.lower())
+        normalized = re.sub(r'[\s\W]+', '', text.lower())
         return hashlib.md5(normalized.encode()).hexdigest()
     
     def similarity(text1: str, text2: str) -> float:

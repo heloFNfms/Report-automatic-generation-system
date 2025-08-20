@@ -1,9 +1,11 @@
 import os
+import time
 from typing import Dict, Any
 from .mcp_client import MCPClient
 from .deepseek_client import DeepSeekClient
 from .textops import flatten_snippets, chunk_texts, rerank_texts, budget_context, smart_sentence_split, deduplicate_citations, smart_chunk_by_strategy
 from .vectorstore import Embedding, FaissStore, PGVectorStore
+from .logger import logger
 from . import db
 
 class Orchestrator:
@@ -42,10 +44,22 @@ class Orchestrator:
     # Step3: 检索+RAG 生成内容（唯一 MCP 步） → 存 MySQL
     async def _generate_section_content(self, t: Dict[str, Any], h1: str, h2: str):
         """生成单个章节内容"""
+        section_key = f"{h1}::{h2}"
+        start_time = time.time()
+        logger.info(f"[{section_key}] 开始生成章节内容")
+        
         try:
             query = f"{t['project_name']} {t['research_content']} {h1} {h2}"
+            
+            # MCP 检索阶段
+            mcp_start = time.time()
             r = await self.mcp.invoke("arxiv_search", {"query": query, "max_results": 8})
+            mcp_time = time.time() - mcp_start
+            logger.info(f"[{section_key}] MCP arXiv 检索耗时: {mcp_time:.2f}s")
             items = r.get("items", [])
+            
+            # 向量处理阶段
+            vector_start = time.time()
             texts = flatten_snippets(items)
             metas = [{"url": it.get("url"), "title": it.get("title") or it.get("id") } for it in items]
             if texts:
@@ -55,7 +69,11 @@ class Orchestrator:
             retrieved = self.store.search(q_emb, top_k=12)  # 先检索更多
             retrieved_texts = [rt[0] for rt in retrieved]
             refs = [rt[1].get("url") for rt in retrieved if rt[1].get("url")]
+            vector_time = time.time() - vector_start
+            logger.info(f"[{section_key}] 向量处理耗时: {vector_time:.2f}s, 检索到 {len(retrieved_texts)} 条文档")
             
+            # 文本处理阶段
+            process_start = time.time()
             # 引用去重
             deduplicated_texts = deduplicate_citations(retrieved_texts, similarity_threshold=0.8)
             
@@ -72,19 +90,35 @@ class Orchestrator:
             # 根据 token 预算控制上下文长度
             budgeted_texts = budget_context(all_chunks, max_tokens=1500)
             context = "\n\n".join(budgeted_texts)
+            process_time = time.time() - process_start
+            logger.info(f"[{section_key}] 文本处理耗时: {process_time:.2f}s, 最终上下文长度: {len(context)} 字符")
+            # DeepSeek 生成阶段
+            deepseek_start = time.time()
             system = "你是学术写作助手，请基于证据撰写严谨内容，并给出参考网址。"
             prompt = (
                 f"【章节】{h1} / {h2}\n【主题】{t['project_name']}\n【研究方向】{t['research_content']}\n【证据】\n{context}\n"
             )
             instruction = "输出 JSON：{\n  \"研究内容\": \"...\",\n  \"参考网址\": [\"https://...\"]\n}"
             ds = await self.ds.chat_json(system, prompt, instruction)
+            deepseek_time = time.time() - deepseek_start
+            logger.info(f"[{section_key}] DeepSeek 生成耗时: {deepseek_time:.2f}s")
+            
             # 保障包含 refs（双通道：模型给的 + 我们检索的）
             merged_refs = list({*(ds.get("参考网址", []) or []), *[u for u in refs if u]})
+            
+            total_time = time.time() - start_time
+            logger.info(f"[{section_key}] 章节生成完成，总耗时: {total_time:.2f}s (MCP:{mcp_time:.1f}s + 向量:{vector_time:.1f}s + 处理:{process_time:.1f}s + DeepSeek:{deepseek_time:.1f}s)")
+            
             return f"{h1}::{h2}", {"研究内容": ds.get("研究内容") or ds.get("content"), "参考网址": merged_refs}
         except Exception as e:
+            error_time = time.time() - start_time
+            logger.error(f"[{section_key}] 生成失败，耗时: {error_time:.2f}s, 错误: {str(e)}")
             return f"{h1}::{h2}", {"研究内容": f"生成{h1}/{h2}内容时出错: {str(e)}", "参考网址": []}
 
     async def step3_content(self, task_id: str):
+        step3_start = time.time()
+        logger.info(f"[Task {task_id}] 开始 Step3 内容生成")
+        
         t = await db.get_task(task_id)
         if not t:
             raise ValueError("task not found")
@@ -115,6 +149,9 @@ class Orchestrator:
         section_results: Dict[str, Any] = {}
         for key, value in results:
             section_results[key] = value
+        
+        step3_total_time = time.time() - step3_start
+        logger.info(f"[Task {task_id}] Step3 内容生成完成，总耗时: {step3_total_time:.2f}s, 生成了 {len(section_results)} 个章节")
             
         await db.save_step(task_id, "content", section_results)
         await db.update_task_status(task_id, "step3_done")

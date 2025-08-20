@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "created_at": "2025-08-20T10:50:08.163533",
-  "total_vectors": 2,
+  "created_at": "2025-08-20T22:59:53.939223",
+  "total_vectors": 17,
   "metadata": [
     {
       "text": "AI in Healthcare",
@@ -29,6 +29,171 @@
       "id": 1,
       "hash": "3a2e6ff8e84d1c87080fad35fb8d5b8b",
       "added_at": "2025-08-20T10:50:08.162546",
+      "version": 1
+    },
+    {
+      "text": "The goal of the present paper is to develop and validate a questionnaire to\nassess AI literacy. In particular, the questionnaire should be deeply grounded\nin the existing literature on AI literacy, should be modular (i.e., including\ndifferent facets that can be used independently of each other) to be flexibly\napplicable in professional life depending on the goals and use cases, and\nshould meet psychological requirements and thus includes further psychological\ncompetencies in addition to the typical facets of AIL. We derived 60 items to\nrepresent different facets of AI Literacy according to Ng and colleagues\nconceptualisation of AI literacy and additional 12 items to represent\npsychological competencies such as problem solving, learning, and emotion\nregulation in regard to AI. For this purpose, data were collected online from\n300 German-speaking adults. The items were tested for factorial structure in\nconfirmatory factor analyses. The result is a measurement instrument that\nmeasures AI literacy with the facets Use & apply AI, Understand AI, Detect AI,\nand AI Ethics and the ability to Create AI as a separate construct, and AI\nSelf-efficacy in learning and problem solving and AI Self-management. This\nstudy contributes to the research on AI literacy by providing a measurement\ninstrument relying on profound competency models. In addition, higher-order\npsychological competencies are included that are particularly important in the\ncontext of pervasive change through AI systems.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2302.09319v1",
+        "title": "MAILS -- Meta AI Literacy Scale: Development and Testing of an AI\n  Literacy Questionnaire Based on Well-Founded Competency Models and\n  Psychological Change- and Meta-Competencies"
+      },
+      "id": 2,
+      "hash": "0644ce1c14a59bd0643a42301e60a619",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Although AI has the potential to drive significant business innovation, many\nfirms struggle to realize its benefits. We examine how the Lean Startup Method\n(LSM) influences the impact of AI on product innovation in startups. Analyzing\ndata from 1,800 Chinese startups between 2011 and 2020, alongside policy shifts\nby the Chinese government in encouraging AI adoption, we find that companies\nwith strong AI capabilities produce more innovative products. Moreover, our\nstudy reveals that AI investments complement LSM in innovation, with\neffectiveness varying by the type of innovation and AI capability. We\ndifferentiate between discovery-oriented AI, which reduces uncertainty in novel\nareas of innovation, and optimization-oriented AI, which refines and optimizes\nexisting processes. Within the framework of LSM, we further distinguish between\nprototyping focused on developing minimum viable products, and controlled\nexperimentation, focused on rigorous testing such as AB testing. We find that\nLSM complements discovery oriented AI by utilizing AI to expand the search for\nmarket opportunities and employing prototyping to validate these opportunities,\nthereby reducing uncertainties and facilitating the development of the first\nrelease of products. Conversely, LSM complements optimization-oriented AI by\nusing AB testing to experiment with the universe of input features and using AI\nto streamline iterative refinement processes, thereby accelerating the\nimprovement of iterative releases of products. As a result, when firms use AI\nand LSM for product development, they are able to generate more high quality\nproduct in less time. These findings, applicable to both software and hardware\ndevelopment, underscore the importance of treating AI as a heterogeneous\nconstruct, as different AI capabilities require distinct organizational\nprocesses to achieve optimal outcomes.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2506.16334v2",
+        "title": "Artificial Intelligence, Lean Startup Method, and Product Innovations"
+      },
+      "id": 3,
+      "hash": "89113a8e09c2e646b9db7f2137591361",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Across a growing number of domains, human experts are expected to learn from\nand adapt to AI with superior decision making abilities. But how can we\nquantify such human adaptation to AI? We develop a simple measure of human\nadaptation to AI and test its usefulness in two case studies. In Study 1, we\nanalyze 1.3 million move decisions made by professional Go players and find\nthat a positive form of adaptation to AI (learning) occurred after the players\ncould observe the reasoning processes of AI, rather than mere actions of AI.\nThese findings based on our measure highlight the importance of explainability\nfor human learning from AI. In Study 2, we test whether our measure is\nsufficiently sensitive to capture a negative form of adaptation to AI (cheating\naided by AI), which occurred in a match between professional Go players. We\ndiscuss our measure's applications in domains other than Go, especially in\ndomains in which AI's decision making ability will likely surpass that of human\nexperts.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2012.15035v3",
+        "title": "Measuring Human Adaptation to AI in Decision Making: Application to\n  Evaluate Changes after AlphaGo"
+      },
+      "id": 4,
+      "hash": "639ced6ee0d2f6398e4e22591f50ac6c",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Language tests measure a person's ability to use a language in terms of\nlistening, speaking, reading, or writing. Such tests play an integral role in\nacademic, professional, and immigration domains, with entities such as\neducational institutions, professional accreditation bodies, and governments\nusing them to assess candidate language proficiency. Recent advances in\nArtificial Intelligence (AI) and the discipline of Natural Language Processing\nhave prompted language test providers to explore AI's potential applicability\nwithin language testing, leading to transformative activity patterns\nsurrounding language instruction and learning. However, with concerns over AI's\ntrustworthiness, it is imperative to understand the implications of integrating\nAI into language testing. This knowledge will enable stakeholders to make\nwell-informed decisions, thus safeguarding community well-being and testing\nintegrity. To understand the concerns and effects of AI usage in language\ntests, we conducted interviews and surveys with English test-takers. To the\nbest of our knowledge, this is the first empirical study aimed at identifying\nthe implications of AI adoption in language tests from a test-taker\nperspective. Our study reveals test-taker perceptions and behavioral patterns.\nSpecifically, we identify that AI integration may enhance perceptions of\nfairness, consistency, and availability. Conversely, it might incite mistrust\nregarding reliability and interactivity aspects, subsequently influencing the\nbehaviors and well-being of test-takers. These insights provide a better\nunderstanding of potential societal implications and assist stakeholders in\nmaking informed decisions concerning AI usage in language testing.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2307.09885v1",
+        "title": "Test-takers have a say: understanding the implications of the use of AI\n  in language tests"
+      },
+      "id": 5,
+      "hash": "9fdd146aa92cceeb0b3686484f175bc6",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Artificial Intelligence (AI) and Machine Learning (ML) have significantly\nimpacted various industries, including software development. Software testing,\na crucial part of the software development lifecycle (SDLC), ensures the\nquality and reliability of software products. Traditionally, software testing\nhas been a labor-intensive process requiring significant manual effort.\nHowever, the advent of AI and ML has transformed this landscape by introducing\nautomation and intelligent decision-making capabilities. AI and ML technologies\nenhance the efficiency and effectiveness of software testing by automating\ncomplex tasks such as test case generation, test execution, and result\nanalysis. These technologies reduce the time required for testing and improve\nthe accuracy of defect detection, ultimately leading to higher quality\nsoftware. AI can predict potential areas of failure by analyzing historical\ndata and identifying patterns, which allows for more targeted and efficient\ntesting. This paper explores the role of AI and ML in software testing by\nreviewing existing literature, analyzing current tools and techniques, and\npresenting case studies that demonstrate the practical benefits of these\ntechnologies. The literature review provides a comprehensive overview of the\nadvancements in AI and ML applications in software testing, highlighting key\nmethodologies and findings from various studies. The analysis of current tools\nshowcases the capabilities of popular AI-driven testing tools such as Eggplant\nAI, Test.ai, Selenium, Appvance, Applitools Eyes, Katalon Studio, and Tricentis\nTosca, each offering unique features and advantages. Case studies included in\nthis paper illustrate real-world applications of AI and ML in software testing,\nshowing significant improvements in testing efficiency, accuracy, and overall\nsoftware quality.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2409.02693v1",
+        "title": "The Role of Artificial Intelligence and Machine Learning in Software\n  Testing"
+      },
+      "id": 6,
+      "hash": "6c32ec436487bff9966cc685cab9af62",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Validity, reliability, and fairness are core ethical principles embedded in\nclassical argument-based assessment validation theory. These principles are\nalso central to the Standards for Educational and Psychological Testing (2014)\nwhich recommended best practices for early applications of artificial\nintelligence (AI) in high-stakes assessments for automated scoring of written\nand spoken responses. Responsible AI (RAI) principles and practices set forth\nby the AI ethics community are critical to ensure the ethical use of AI across\nvarious industry domains. Advances in generative AI have led to new policies as\nwell as guidance about the implementation of RAI principles for assessments\nusing AI. Building on Chapelle's foundational validity argument work to address\nthe application of assessment validation theory for technology-based\nassessment, we propose a unified assessment framework that considers classical\ntest validation theory and assessment-specific and domain-agnostic RAI\nprinciples and practice. The framework addresses responsible AI use for\nassessment that supports validity arguments, alignment with AI ethics to\nmaintain human values and oversight, and broader social responsibility\nassociated with AI use.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2411.02577v1",
+        "title": "Where Assessment Validation and Responsible AI Meet"
+      },
+      "id": 7,
+      "hash": "3d94dde118f3783cc4fa5fd23235ecae",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Knowing the reflection of game theory and ethics, we develop a mathematical\nrepresentation to bridge the gap between the concepts in moral philosophy\n(e.g., Kantian and Utilitarian) and AI ethics industry technology standard\n(e.g., IEEE P7000 standard series for Ethical AI). As an application, we\ndemonstrate how human value can be obtained from the experimental game theory\n(e.g., trust game experiment) so as to build an ethical AI. Moreover, an\napproach to test the ethics (rightness or wrongness) of a given AI algorithm by\nusing an iterated Prisoner's Dilemma Game experiment is discussed as an\nexample. Compared with existing mathematical frameworks and testing method on\nAI ethics technology, the advantages of the proposed approach are analyzed.",
+      "meta": {
+        "url": "http://arxiv.org/abs/1711.05905v1",
+        "title": "Using experimental game theory to transit human values to ethical AI"
+      },
+      "id": 8,
+      "hash": "65972f9d841312feeec0b85df801f061",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Neurosymbolic artificial intelligence (AI) is an emerging branch of AI that\ncombines the strengths of symbolic AI and sub-symbolic AI. A major drawback of\nsub-symbolic AI is that it acts as a \"black box\", meaning that predictions are\ndifficult to explain, making the testing & evaluation (T&E) and validation &\nverification (V&V) processes of a system that uses sub-symbolic AI a challenge.\nSince neurosymbolic AI combines the advantages of both symbolic and\nsub-symbolic AI, this survey explores how neurosymbolic applications can ease\nthe V&V process. This survey considers two taxonomies of neurosymbolic AI,\nevaluates them, and analyzes which algorithms are commonly used as the symbolic\nand sub-symbolic components in current applications. Additionally, an overview\nof current techniques for the T&E and V&V processes of these components is\nprovided. Furthermore, it is investigated how the symbolic part is used for T&E\nand V&V purposes in current neurosymbolic applications. Our research shows that\nneurosymbolic AI as great potential to ease the T&E and V&V processes of\nsub-symbolic AI by leveraging the possibilities of symbolic AI. Additionally,\nthe applicability of current T&E and V&V methods to neurosymbolic AI is\nassessed, and how different neurosymbolic architectures can impact these\nmethods is explored. It is found that current T&E and V&V techniques are partly\nsufficient to test, evaluate, verify, or validate the symbolic and sub-symbolic\npart of neurosymbolic applications independently, while some of them use\napproaches where current T&E and V&V methods are not applicable by default, and\nadjustments or even new approaches are needed. Our research shows that there is\ngreat potential in using symbolic AI to test, evaluate, verify, or validate the\npredictions of a sub-symbolic model, making neurosymbolic AI an interesting\nresearch direction for safe, secure, and trustworthy AI.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2401.03188v2",
+        "title": "A Survey on Verification and Validation, Testing and Evaluations of\n  Neurosymbolic Artificial Intelligence"
+      },
+      "id": 9,
+      "hash": "b46765d77cd44b7be418a204785bd4d3",
+      "added_at": "2025-08-20T22:54:45.512788",
+      "version": 1
+    },
+    {
+      "text": "Regular expressions cause string-related bugs and open security\nvulnerabilities for DOS attacks. However, beyond ReDoS (Regular expression\nDenial of Service), little is known about the extent to which regular\nexpression issues affect software development and how these issues are\naddressed in practice. We conduct an empirical study of 356 merged\nregex-related pull request bugs from Apache, Mozilla, Facebook, and Google\nGitHub repositories. We identify and classify the nature of the regular\nexpression problems, the fixes, and the related changes in the test code.\n  The most important findings in this paper are as follows: 1) incorrect\nregular expression behavior is the dominant root cause of regular expression\nbugs (165/356, 46.3%). The remaining root causes are incorrect API usage (9.3%)\nand other code issues that require regular expression changes in the fix\n(29.5%), 2) fixing regular expression bugs is nontrivial as it takes more time\nand more lines of code to fix them compared to the general pull requests, 3)\nmost (51%) of the regex-related pull requests do not contain test code changes.\nCertain regex bug types (e.g., compile error, performance issues, regex\nrepresentation) are less likely to include test code changes than others, and\n4) the dominant type of test code changes in regex-related pull requests is\ntest case addition (75%). The results of this study contribute to a broader\nunderstanding of the practical problems faced by developers when using, fixing,\nand testing regular expressions.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2104.09693v1",
+        "title": "Demystifying Regular Expression Bugs: A comprehensive study on regular\n  expression bug causes, fixes, and testing"
+      },
+      "id": 10,
+      "hash": "9ab2988dde89e733ff7614dc2fd399d2",
+      "added_at": "2025-08-20T22:59:53.939223",
+      "version": 1
+    },
+    {
+      "text": "Ship trajectories from Automatic Identification System (AIS) messages are\nimportant in maritime safety, domain awareness, and algorithmic testing.\nAlthough the specifications for transmitting and receiving AIS messages are\nfixed, it is well known that technical inaccuracies and lacking seafarer\ncompliance lead to severe data quality impairment. This paper proposes an\nadaptable, data-driven, maneuverability-dependent, $\\alpha$-quantile-based\nframework for decoding, constructing, splitting, and assessing trajectories\nfrom raw AIS records to improve transparency in AIS data mining. Results\nindicate the proposed filtering algorithm robustly extracts clean, long, and\nuninterrupted trajectories for further processing. An open-source Python\nimplementation of the framework is provided.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2407.04402v3",
+        "title": "An open-source framework for data-driven trajectory extraction from AIS\n  data -- the $α$-method"
+      },
+      "id": 11,
+      "hash": "b968f59c085eb5b357af349366bd79c5",
+      "added_at": "2025-08-20T22:59:53.939223",
+      "version": 1
+    },
+    {
+      "text": "Artificial Intelligence (AI) has burrowed into our lives in various aspects;\nhowever, without appropriate testing, deployed AI systems are often being\ncriticized to fail in critical and embarrassing cases. Existing testing\napproaches mainly depend on fixed and pre-defined datasets, providing a limited\ntesting coverage. In this paper, we propose the concept of proactive testing to\ndynamically generate testing data and evaluate the performance of AI systems.\nWe further introduce Challenge.AI, a new crowd system that features the\nintegration of crowdsourcing and machine learning techniques in the process of\nerror generation, error validation, error categorization, and error analysis.\nWe present experiences and insights into a participatory design with AI\ndevelopers. The evaluation shows that the crowd workflow is more effective with\nthe help of machine learning techniques. AI developers found that our system\ncan help them discover unknown errors made by the AI models, and engage in the\nprocess of proactive testing.",
+      "meta": {
+        "url": "http://arxiv.org/abs/1810.09030v1",
+        "title": "Challenge AI Mind: A Crowd System for Proactive AI Testing"
+      },
+      "id": 12,
+      "hash": "4cdf9d07572ce23202d44c68135f9950",
+      "added_at": "2025-08-20T22:59:53.939223",
+      "version": 1
+    },
+    {
+      "text": "Feature attribution methods highlight the important input tokens as\nexplanations to model predictions, which have been widely applied to deep\nneural networks towards trustworthy AI. However, recent works show that\nexplanations provided by these methods face challenges of being faithful and\nrobust. In this paper, we propose a method with Robustness improvement and\nExplanation Guided training towards more faithful EXplanations (REGEX) for text\nclassification. First, we improve model robustness by input gradient\nregularization technique and virtual adversarial training. Secondly, we use\nsalient ranking to mask noisy tokens and maximize the similarity between model\nattention and feature attribution, which can be seen as a self-training\nprocedure without importing other external information. We conduct extensive\nexperiments on six datasets with five attribution methods, and also evaluate\nthe faithfulness in the out-of-domain setting. The results show that REGEX\nimproves fidelity metrics of explanations in all settings and further achieves\nconsistent gains based on two randomization tests. Moreover, we show that using\nhighlight explanations produced by REGEX to train select-then-predict models\nresults in comparable task performance to the end-to-end method.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2312.17591v1",
+        "title": "Towards Faithful Explanations for Text Classification with Robustness\n  Improvement and Explanation Guided Training"
+      },
+      "id": 13,
+      "hash": "01747f4b305e62b917e265fc649a115b",
+      "added_at": "2025-08-20T22:59:53.939223",
+      "version": 1
+    },
+    {
+      "text": "Composing regular expressions (regexes) is a common but challenging\nengineering activity. Software engineers struggle with regex complexity,\nleading to defects, performance issues, and security vulnerabilities.\nResearchers have proposed tools to synthesize regexes automatically, and recent\ngenerative AI techniques are also promising. Meanwhile, developers commonly\nreuse existing regexes from Internet sources and codebases. In this study, we\nask a simple question: are regex composition tasks unique enough to merit\ndedicated machinery, or is reuse all we need?\n  We answer this question through a systematic evaluation of state-of-the-art\nregex reuse and synthesis strategies. We begin by collecting a novel dataset of\nregex composition tasks mined from GitHub and RegExLib (55,137 unique tasks\nwith solution regexes). To address the absence of an automated regex reuse\nformulation, we introduce reuse-by-example, a Programming by Example (PbE)\napproach that leverages a curated database of production-ready regexes.\nAlthough all approaches can solve these composition tasks accurately,\nreuse-by-example and LLMs both do far better over the range of metrics we\napplied. Our evaluation then uses multiple dimensions, including a novel\nmetric, to compare reuse-by-example against two synthesis approaches: formal\nregex synthesizers and generative AI (LLMs). Although all approaches can solve\nthese composition tasks accurately, reuse and LLMs both do far better over the\nrange of metrics we applied. Ceteris paribus, prefer the cheaper solution --\nfor regex composition, perhaps reuse is all you need. Our findings provide\nactionable insights for developers selecting regex composition strategies and\ninform the design of future tools to improve regex reliability in software\nsystems.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2503.20579v1",
+        "title": "Is Reuse All You Need? A Systematic Comparison of Regular Expression\n  Composition Strategies"
+      },
+      "id": 14,
+      "hash": "ef230c35a8ad2b85cca43d536fa3f802",
+      "added_at": "2025-08-20T22:59:53.939223",
+      "version": 1
+    },
+    {
+      "text": "Deep learning (DL) libraries, widely used in AI applications, often contain\nvulnerabilities like buffer overflows and use-after-free errors. Traditional\nfuzzing struggles with the complexity and API diversity of DL libraries such as\nTensorFlow and PyTorch, which feature over 1,000 APIs. Testing all these APIs\nis challenging due to complex inputs and varied usage patterns. While large\nlanguage models (LLMs) show promise in code understanding and generation,\nexisting LLM-based fuzzers lack deep knowledge of API edge cases and struggle\nwith test input generation. To address this, we propose DFUZZ, an LLM-driven\nfuzzing approach for DL libraries. DFUZZ leverages two insights: (1) LLMs can\nreason about error-triggering edge cases from API code and apply this knowledge\nto untested APIs, and (2) LLMs can accurately synthesize test programs to\nautomate API testing. By providing LLMs with a \"white-box view\" of APIs, DFUZZ\nenhances reasoning and generation for comprehensive fuzzing. Experimental\nresults show that DFUZZ outperforms state-of-the-art fuzzers in API coverage\nfor TensorFlow and PyTorch, uncovering 37 bugs, with 8 fixed and 19 under\ndeveloper investigation.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2501.04312v1",
+        "title": "Your Fix Is My Exploit: Enabling Comprehensive DL Library API Fuzzing\n  with Large Language Models"
+      },
+      "id": 15,
+      "hash": "015e14485b526e74ca6a858b172eb31d",
+      "added_at": "2025-08-20T22:59:53.939223",
+      "version": 1
+    },
+    {
+      "text": "With the extensive use of AI in various fields, the issue of AI security has\nbecome more significant. The AI data poisoning attacks will be the most\nthreatening approach against AI security after the adversarial examples. As the\ncontinuous updating of AI applications online, the data pollution models can be\nuploaded by attackers to achieve a certain malicious purpose. Recently, the\nresearch on AI data poisoning attacks is mostly out of practice and use\nself-built experimental environments so that it cannot be as close to reality\nas adversarial example attacks. This article's first contribution is to provide\na solution and a breakthrough for the aforementioned issue with research\nlimitations, to aim at data poisoning attacks that target real businesses, in\nthis case: data poisoning attacks on real Go AI. We install a Trojan virus into\nthe real Go AI that manipulates the AI's behavior. It is the first time that we\nsucceed in manipulating complicated AI and provide a reliable approach to the\nAI data poisoning attack verification method. The method of building Trojan in\nthis article can be expanded to more practical algorithms for other fields such\nas content recommendation, text translation, and intelligent dialogue.",
+      "meta": {
+        "url": "http://arxiv.org/abs/2007.11820v3",
+        "title": "AI Data poisoning attack: Manipulating game AI of Go"
+      },
+      "id": 16,
+      "hash": "1c524b4d89da6a256bd9f990c0419a75",
+      "added_at": "2025-08-20T22:59:53.939223",
       "version": 1
     }
   ]

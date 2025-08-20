@@ -184,7 +184,7 @@ async def step3(body: TaskIn):
         result = await orc.step3_content(body.task_id)
         perf_logger.end_timer("step3", success=True, task_id=body.task_id, sections_count=len(result) if isinstance(result, dict) else 0)
         logger.info(f"Step3 completed successfully for task {body.task_id}", task_id=body.task_id, sections_count=len(result) if isinstance(result, dict) else 0)
-        return {"research_results": result}
+        return result
     except Exception as e:
         perf_logger.end_timer("step3", success=False, task_id=body.task_id, error=str(e))
         logger.error(f"Step3 failed for task {body.task_id}: {str(e)}", task_id=body.task_id, error=str(e))
